@@ -137,7 +137,7 @@
         const tbody = document.getElementById('reservation-list-tbody');
         tbody.innerHTML = (serverData.reservations||[]).length===0 ? '<tr><td colspan="6" style="text-align:center;">予約データはありません</td></tr>':'';
         let resList = serverData.reservations || [];
-        resList.sort((a,b) => a.date.localeCompare(b.date));
+        resList.forEach(r => r.date = r.date.split('T')[0]);
         resList.forEach((res, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `<td>${res.date}</td><td>${res.className}</td><td>${res.time}</td><td><b>${res.name}</b></td><td>${res.lunch}</td><td><button class="btn-delete" onclick="deleteRes(${i})">行を削除</button></td>`;
