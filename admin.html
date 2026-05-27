@@ -78,7 +78,7 @@
 
 <script>
     // ⚠️ 下の "" の間に、あなたのGoogle URLを貼り付けてください
-    const APP_URL = "https://script.google.com/macros/s/AKfycbzCofBI7sVx4C23HYvTSBKfFa30vzJzgBgNdeajix-4m15Cliecs7W_Yj-NKVY28cmL/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbx3kk3AF0NyNZ9hQ7DAIScOVH4yhq1jpB_UkxekTDfjCh4p-ETuRhpRfKsBcNfpcF5C/exec";
 
     let serverData = { dates: [], times: [], reservations: [] };
 
@@ -166,28 +166,29 @@
         if(!serverData.times) serverData.times = [];
         serverData.times.push(t); saveSettings(); document.getElementById('new-time').value='';
     }
-    function deleteTimeSlot(t) { if(confirm('削除しますか？')) { serverData.times = serverData.times.filter(x=>x!==t); saveSettings(); } }
-    
-    async function deleteRes(i) {
-        if(confirm('スプレッドシートからこの予約を削除しますか？')) {
-            showStatus("削除中...");
-            const target = serverData.reservations[i];
-            try {
-                await fetch(APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'deleteReservation',
-                        date: target.date,
-                        className: target.className,
-                        time: target.time,
-                        name: target.name
-                    })
-                });
-                loadData();
-            } catch(e) { showStatus("削除エラー", true); }
-        }
-    }
 
+async function deleteRes(i) {
+    if(confirm('スプレッドシートからこの予約を削除しますか？')) {
+        showStatus("削除中...");
+        const target = serverData.reservations[i];
+        // 👇 日付データから余計な時差情報（T00:00...など）を強制的にカットするお守り
+        const cleanDate = target.date.split('T')[0]; 
+        try {
+            await fetch(APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'deleteReservation',
+                    date: cleanDate, // 綺麗にした日付を送信
+                    className: target.className,
+                    time: target.time,
+                    name: target.name
+                })
+            });
+            loadData();
+        } catch(e) { showStatus("削除エラー", true); }
+    }
+}
+   
     loadData();
 </script>
 </body>
