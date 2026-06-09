@@ -3,192 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>予約システム管理画面</title>
+    <title>予約管理画面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 850px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; }
-        h3 { color: #475569; font-size: 16px; margin-top: 25px; margin-bottom: 10px; border-left: 4px solid #2563eb; padding-left: 8px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #4a5568; }
-        input[type="date"], input[type="text"] { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        .admin-box { background: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .flex-row { display: flex; gap: 10px; align-items: flex-end; }
-        .flex-item { flex: 1; }
-        .btn-add { background: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .list-box { list-style: none; padding: 0; max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; background: #fafafa; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-bottom: 1px solid #e2e8f0; }
-        .res-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        .res-table th, .res-table td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
-        .res-table th { background: #f1f5f9; }
-        .btn-delete { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        .sync-text { text-align: right; font-size: 12px; color: #059669; font-weight: bold; }
+        body { background-color: #f1f3f5; padding: 20px; }
+        .card { margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .badge-class { background-color: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h2>⚙️ 予約管理画面（Googleシート連動版）</h2>
-    <div id="sync-status" class="sync-text">スプレッドシート同期完了</div>
+<div class="container mt-4" style="max-width: 900px;">
+    <h2 class="mb-4 text-center">📅 予約管理システム</h2>
     
-    <div class="admin-box">
-        <h3>📅 受付日の一括登録</h3>
-        <div class="flex-row">
-            <div class="flex-item">
-                <input type="date" id="start-date">
-            </div>
-            <div>～</div>
-            <div class="flex-item">
-                <input type="date" id="end-date">
-            </div>
-            <button class="btn-add" onclick="addDateRange()" style="background:#059669;">一括登録</button>
-        </div>
-    </div>
+    <div id="status" class="alert alert-info text-center d-none">データを処理中...</div>
 
-    <div class="admin-box" style="background: #fdf2f8; border: 1px solid #fbcfe8;">
-        <h3>⏰ 提供時間帯の設定</h3>
-        <div class="flex-row">
-            <div class="flex-item">
-                <input type="text" id="new-time" placeholder="09:30～11:00">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card p-3 bg-light border-primary">
+                <h5 class="card-title fw-bold text-primary">👥 1時間帯あたりの定員数</h5>
+                <div class="input-group">
+                    <span class="input-group-text">予約上限数</span>
+                    <input type="number" id="maxCapacity" class="form-control text-center fw-bold" min="1" max="99" value="2">
+                    <span class="input-group-text">名 / 枠</span>
+                </div>
             </div>
-            <button class="btn-add" onclick="addTimeSlot()" style="background: #db2777;">追加</button>
-        </div>
-    </div>
 
-    <div style="display: flex; gap: 20px;">
-        <div style="flex: 1;">
-            <h3>📌 受付日一覧</h3>
-            <ul id="active-date-list" class="list-box"></ul>
-        </div>
-        <div style="flex: 1;">
-            <h3>⏱️ 時間帯一覧</h3>
-            <ul id="active-time-list" class="list-box"></ul>
-        </div>
-    </div>
+            <div class="card p-3">
+                <h5 class="card-title fw-bold">🌿 クラスの設定</h5>
+                <div class="input-group mb-3">
+                    <input type="text" id="newClass" class="form-control" placeholder="例: カモミール">
+                    <span class="input-group-text">クラス</span>
+                    <button class="btn btn-primary" onclick="addClass()">追加</button>
+                </div>
+                <div id="classList" class="d-flex flex-wrap gap-2 mb-2"></div>
+            </div>
 
-    <h3>📝 スプレッドシート内の予約一覧 <button onclick="loadData()" style="font-size:12px; padding:4px 8px; cursor:pointer;">🔄データを最新にする</button></h3>
-    <div style="overflow-x: auto;">
-        <table class="res-table">
-            <thead>
-                <tr><th>日付</th><th>クラス</th><th>時間帯</th><th>お名前</th><th>昼食</th><th>操作</th></tr>
-            </thead>
-            <tbody id="reservation-list-tbody"></tbody>
-        </table>
+            <div class="card p-3">
+                <h5 class="card-title fw-bold">📅 予約受付日の設定（期間指定）</h5>
+                <div class="mb-2">
+                    <label class="small text-muted">開始日</label>
+                    <input type="date" id="startDate" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted">終了日</label>
+                    <input type="date" id="endDate" class="form-control">
+                </div>
+                <button class="btn btn-primary w-100 mb-3" onclick="addDateRange()">📅 この期間をまとめて追加</button>
+                <ul id="dateList" class="list-group" style="max-height: 200px; overflow-y: auto;"></ul>
+            </div>
+
+            <div class="card p-3">
+                <h5 class="card-title fw-bold">🕒 時間帯の設定</h5>
+                <div class="input-group mb-3">
+                    <input type="text" id="newTime" class="form-control" placeholder="例: 13:00～14:00">
+                    <button class="btn btn-primary" onclick="addTime()">追加</button>
+                </div>
+                <ul id="timeList" class="list-group"></ul>
+            </div>
+
+            <button class="btn btn-success w-100 py-2 fw-bold mb-4" onclick="saveSettings()">⚙️ 設定を保存する</button>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card p-3">
+                <h5 class="card-title fw-bold mb-3">👤 現在のご予約一覧</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日時 / クラス</th>
+                                <th>ご予約者情報</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // ⚠️ 下の "" の間に、あなたのGoogle URLを貼り付けてください
-    const APP_URL = "https://script.google.com/macros/s/AKfycbx3kk3AF0NyNZ9hQ7DAIScOVH4yhq1jpB_UkxekTDfjCh4p-ETuRhpRfKsBcNfpcF5C/exec";
+    // ⚠️【最重要】Google GASのURLをここに貼り付けてください！
+    const APP_URL = "https://script.google.com/macros/s/AKfycbzV6IgtxUsNGMtL4tvWAlI4gqItxo5bhG_4HxGlrHG1X-ft5yPH3dtMsPTbthAPnYhY/exec";
 
-    let serverData = { dates: [], times: [], reservations: [] };
+    let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, reservations: [] };
 
     async function loadData() {
-        showStatus("同期中...");
+        showStatus("データを読み込み中...");
         try {
             const res = await fetch(APP_URL);
             serverData = await res.json();
-            if(!serverData.times || serverData.times.length === 0) {
-                serverData.times = ["09:30～11:00", "11:30～12:30", "16:00～17:00"];
-            }
-            renderAll();
-            showStatus("スプレッドシート同期完了");
-        } catch(e) { showStatus("同期エラー", true); }
+            document.getElementById('maxCapacity').value = serverData.maxCapacity || 2;
+            renderSettings();
+            renderReservations();
+            showStatus("");
+        } catch(e) { 
+            showStatus("データの読み込みに失敗しました。URLやデプロイ権限をご確認ください。", true); 
+        }
     }
 
-    async function saveSettings() {
-        showStatus("設定を保存中...");
+    function formatDateDisplay(dStr) {
+        if (!dStr) return "";
+        if (typeof dStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
+            return dStr;
+        }
         try {
-            await fetch(APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'updateSettings',
-                    dates: serverData.dates,
-                    times: serverData.times
-                })
-            });
-            showStatus("スプレッドシート同期完了");
-            renderAll();
-        } catch(e) { showStatus("保存エラー", true); }
+            const d = new Date(dStr);
+            if (isNaN(d.getTime())) return String(dStr);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        } catch (e) {
+            return String(dStr);
+        }
     }
 
-    function showStatus(text, isError=false) {
-        const el = document.getElementById('sync-status');
-        el.innerText = text;
-        el.style.color = isError ? '#ef4444' : '#059669';
+    function renderSettings() {
+        const classDiv = document.getElementById('classList');
+        classDiv.innerHTML = serverData.classes.length === 0 ? '<span class="text-muted small">登録なし</span>' : '';
+        serverData.classes.forEach((c, idx) => {
+            classDiv.innerHTML += `
+                <span class="badge badge-class p-2 d-flex align-items-center gap-2">
+                    ${c}クラス 
+                    <button type="button" class="btn-close" style="font-size:0.6rem;" onclick="removeClass(${idx})"></button>
+                </span>`;
+        });
+
+        const dateUl = document.getElementById('dateList');
+        dateUl.innerHTML = serverData.dates.length === 0 ? '<li class="list-group-item text-muted text-center">日付が登録されていません</li>' : '';
+        
+        const cleanedDates = serverData.dates.map(d => formatDateDisplay(d)).filter(Boolean);
+        const uniqueDates = [...new Set(cleanedDates)].sort();
+
+        uniqueDates.forEach((d) => {
+            const idx = serverData.dates.indexOf(d);
+            const originalIdx = serverData.dates.findIndex(orig => formatDateDisplay(orig) === d);
+            dateUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${d}<button class="btn btn-sm btn-outline-danger" onclick="removeDate(${originalIdx !== -1 ? originalIdx : idx})">削除</button></li>`;
+        });
+
+        const timeUl = document.getElementById('timeList');
+        timeUl.innerHTML = serverData.times.length === 0 ? '<li class="list-group-item text-muted text-center">時間帯が登録されていません</li>' : '';
+        serverData.times.forEach((t, idx) => {
+            timeUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${t}<button class="btn btn-sm btn-outline-danger" onclick="removeTime(${idx})">削除</button></li>`;
+        });
     }
 
-    function renderAll() {
-        const dList = document.getElementById('active-date-list');
-        dList.innerHTML = (serverData.dates||[]).length===0 ? '<li>設定なし</li>':'';
-        (serverData.dates||[]).forEach(d => {
-            const li = document.createElement('li'); li.className='list-item';
-            li.innerHTML = `<span>${d}</span><button class="btn-delete" onclick="deleteDate('${d}')">削除</button>`;
-            dList.appendChild(li);
-        });
-
-        const tList = document.getElementById('active-time-list');
-        tList.innerHTML = (serverData.times||[]).length===0 ? '<li>設定なし</li>':'';
-        (serverData.times||[]).forEach(t => {
-            const li = document.createElement('li'); li.className='list-item';
-            li.innerHTML = `<span>${t}</span><button class="btn-delete" onclick="deleteTimeSlot('${t}')">削除</button>`;
-            tList.appendChild(li);
-        });
-
-        const tbody = document.getElementById('reservation-list-tbody');
-        tbody.innerHTML = (serverData.reservations||[]).length===0 ? '<tr><td colspan="6" style="text-align:center;">予約データはありません</td></tr>':'';
-        let resList = serverData.reservations || [];
-        resList.forEach(r => r.date = r.date.split('T')[0]);
-        resList.forEach((res, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${res.date}</td><td>${res.className}</td><td>${res.time}</td><td><b>${res.name}</b></td><td>${res.lunch}</td><td><button class="btn-delete" onclick="deleteRes(${i})">行を削除</button></td>`;
-            tbody.appendChild(tr);
+    function renderReservations() {
+        const tbody = document.getElementById('resTable');
+        tbody.innerHTML = serverData.reservations.length === 0 ? '<tr><td colspan="3" class="text-muted text-center py-4">現在ご予約はありません</td></tr>' : '';
+        serverData.reservations.forEach((r, i) => {
+            const cleanResDate = formatDateDisplay(r.date);
+            tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <span class="fw-bold text-primary">${cleanResDate}</span><br>
+                        <small class="text-muted">${r.time}</small><br>
+                        <span class="badge bg-secondary">${r.className}クラス</span>
+                    </td>
+                    <td>
+                        <strong>${r.name} 様</strong><br>
+                        <small class="text-muted">昼食: ${r.lunch}</small><br>
+                        <small class="text-muted" style="word-break: break-all;">${r.email || 'なし'}</small>
+                    </td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteRes(${i})">削除</button></td>
+                </tr>`;
         });
     }
 
     function addDateRange() {
-        const start = document.getElementById('start-date').value;
-        const end = document.getElementById('end-date').value;
-        if(!start || !end) return alert('両方選択してください');
-        let curr = new Date(start); const endDate = new Date(end);
-        if(!serverData.dates) serverData.dates = [];
-        while(curr <= endDate) {
-            const s = curr.toISOString().split('T')[0];
-            if(!serverData.dates.includes(s)) serverData.dates.push(s);
-            curr.setDate(curr.getDate()+1);
+        const startVal = document.getElementById('startDate').value;
+        const endVal = document.getElementById('endDate').value;
+        if (!startVal || !endVal) { alert('開始日と終了日の両方を選択してください'); return; }
+        
+        let d1 = new Date(startVal);
+        let d2 = new Date(endVal);
+        if (d1 > d2) { alert('終了日は開始日より後の日付にしてください'); return; }
+
+        let count = 0;
+        while (d1 <= d2) {
+            let yyyy = d1.getFullYear();
+            let mm = String(d1.getMonth() + 1).padStart(2, '0');
+            let dd = String(d1.getDate()).padStart(2, '0');
+            let dateStr = `${yyyy}-${mm}-${dd}`;
+            
+            if (!serverData.dates.includes(dateStr)) {
+                serverData.dates.push(dateStr);
+                count++;
+            }
+            d1.setDate(d1.getDate() + 1);
         }
-        serverData.dates.sort(); saveSettings();
-    }
-    function deleteDate(d) { if(confirm('削除しますか？')) { serverData.dates = serverData.dates.filter(x=>x!==d); saveSettings(); } }
-    
-    function addTimeSlot() {
-        const t = document.getElementById('new-time').value.trim();
-        if(!t) return;
-        if(!serverData.times) serverData.times = [];
-        serverData.times.push(t); saveSettings(); document.getElementById('new-time').value='';
+        alert(`${count}日分の日付を追加しました！\n一番下の「設定を保存する」ボタンを押すと確定します。`);
+        renderSettings();
     }
 
-async function deleteRes(i) {
-    if(confirm('スプレッドシートからこの予約を削除しますか？')) {
-        showStatus("削除中...");
-        const target = serverData.reservations[i];
-        // 👇 日付データから余計な時差情報（T00:00...など）を強制的にカットするお守り
-        const cleanDate = target.date.split('T')[0]; 
+    function addClass() {
+        const name = document.getElementById('newClass').value.trim();
+        if(!name) return;
+        if(serverData.classes.includes(name)) { alert('既に存在するクラス名です'); return; }
+        serverData.classes.push(name); document.getElementById('newClass').value = ""; renderSettings();
+    }
+    function removeClass(idx) { if(confirm('このクラスを削除しますか？')) { serverData.classes.splice(idx, 1); renderSettings(); } }
+    function removeDate(idx) { if(idx !== -1) { serverData.dates.splice(idx, 1); renderSettings(); } }
+    function addTime() {
+        const val = document.getElementById('newTime').value.trim();
+        if(!val || serverData.times.includes(val)) return;
+        serverData.times.push(val); document.getElementById('newTime').value = ""; renderSettings();
+    }
+    function removeTime(idx) { serverData.times.splice(idx, 1); renderSettings(); }
+
+    async function saveSettings() {
+        showStatus("設定を保存中...");
+        const cap = parseInt(document.getElementById('maxCapacity').value, 10) || 2;
         try {
             await fetch(APP_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action: 'deleteReservation',
-                    date: cleanDate, // 綺麗にした日付を送信
-                    className: target.className,
-                    time: target.time,
-                    name: target.name
+                    action: 'updateSettings', dates: serverData.dates, times: serverData.times, classes: serverData.classes, maxCapacity: cap
                 })
             });
+            alert('設定を保存しました！');
             loadData();
-        } catch(e) { showStatus("削除エラー", true); }
+        } catch(e) { showStatus("保存に失敗しました。", true); }
     }
-}
-   
+
+    async function deleteRes(i) {
+        if(confirm('スプレッドシートからこの予約を削除しますか？')) {
+            showStatus("削除中...");
+            const target = serverData.reservations[i];
+            const cleanTargetDate = formatDateDisplay(target.date);
+            try {
+                await fetch(APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'deleteReservation', date: cleanTargetDate, className: target.className, time: target.time, name: target.name })
+                });
+                loadData();
+            } catch(e) { showStatus("削除エラー", true); }
+        }
+    }
+
+    function showStatus(msg, isError = false) {
+        const div = document.getElementById('status');
+        if(!msg) { div.classList.add('d-none'); return; }
+        div.className = `alert ${isError ? 'alert-danger' : 'alert-info'} text-center`;
+        div.textContent = msg; div.classList.remove('d-none');
+    }
+
     loadData();
 </script>
 </body>
