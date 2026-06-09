@@ -6,40 +6,82 @@
     <title>予約管理画面</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f1f3f5; padding: 20px; }
+        body { background-color: #f1f3f5; padding: 20px; display: none; }
         .card { margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .badge-class { background-color: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; }
+
+        /* 🖨️ 印刷用プロ仕様スタイル */
+        @media print {
+            body { background-color: #fff; padding: 0; display: block !important; }
+            .container { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .col-md-5, #status, .btn, .btn-close, .alert, h2 { display: none !important; }
+            .col-md-7 { width: 100% !important; flex: 0 0 100% !important; max-width: 100% !important; }
+            .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+            .card-title { font-size: 1.6rem; text-align: center; margin-bottom: 25px; font-weight: bold; }
+            .table { width: 100% !important; border-collapse: collapse; }
+            th, td { border: 1px solid #333 !important; padding: 10px !important; }
+            th:nth-child(3), td:nth-child(3) { display: none !important; }
+            
+            .text-muted { color: #000 !important; opacity: 1 !important; }
+            small { font-size: 0.9rem !important; color: #000 !important; display: inline-block !important; }
+            .print-no-email { display: none !important; }
+        }
     </style>
 </head>
 <body>
-<div class="container mt-4" style="max-width: 900px;">
-    <h2 class="mb-4 text-center">📅 予約管理システム</h2>
+<div class="container mt-4" style="max-width: 950px;">
+    <h2 class="mb-4 text-center fw-bold">📅 予約管理システム</h2>
     
     <div id="status" class="alert alert-info text-center d-none">データを処理中...</div>
 
     <div class="row">
         <div class="col-md-5">
             <div class="card p-3 bg-light border-primary">
-                <h5 class="card-title fw-bold text-primary">👥 1時間帯あたりの定員数</h5>
-                <div class="input-group">
+                <h5 class="card-title fw-bold text-primary">👥 定員と締め切りの設定</h5>
+                <div class="input-group mb-3">
                     <span class="input-group-text">予約上限数</span>
                     <input type="number" id="maxCapacity" class="form-control text-center fw-bold" min="1" max="99" value="2">
                     <span class="input-group-text">名 / 枠</span>
                 </div>
+                
+                <label class="fw-bold small mb-1 text-secondary">⏳ 受付締め切り方法の選択</label>
+                <div class="mb-2 p-2 bg-white rounded border">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="deadlineMode" id="modeDays" value="days" checked onchange="toggleDeadlineInput()">
+                        <label class="form-check-label small fw-bold" for="modeDays">予約日の〇日前</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="deadlineMode" id="modeAbsolute" value="absolute" onchange="toggleDeadlineInput()">
+                        <label class="form-check-label small fw-bold" for="modeAbsolute">指定日時で一括〆切</label>
+                    </div>
+                </div>
+
+                <div id="divDays" class="input-group mb-2">
+                    <span class="input-group-text">締め切り</span>
+                    <input type="number" id="deadlineDays" class="form-control text-center fw-bold" min="0" max="99" value="0">
+                    <span class="input-group-text">日前</span>
+                </div>
+                
+                <div id="divAbsolute" class="mb-2 d-none">
+                    <input type="datetime-local" id="deadlineValue" class="form-control fw-bold">
+                </div>
+
+                <button class="btn btn-sm btn-outline-secondary w-100 mb-2 fw-bold" onclick="clearDeadlineSettings()">🧹 締め切り設定をクリアする</button>
+                
+                <small class="text-muted mt-1 d-block" id="deadlineHelp">※0にすると当日まで受付。2にすると各予約日の2日前に自動で隠れます。</small>
             </div>
 
             <div class="card p-3">
                 <h5 class="card-title fw-bold">🌿 クラスの設定</h5>
                 <div class="input-group mb-3">
                     <input type="text" id="newClass" class="form-control" placeholder="例: カモミール">
-                    <span class="input-group-text">クラス</span>
                     <button class="btn btn-primary" onclick="addClass()">追加</button>
                 </div>
                 <div id="classList" class="d-flex flex-wrap gap-2 mb-2"></div>
             </div>
 
             <div class="card p-3">
-                <h5 class="card-title fw-bold">📅 予約受付日の設定（期間指定）</h5>
+                <h5 class="card-title fw-bold">📅 予約受付日の設定</h5>
                 <div class="mb-2">
                     <label class="small text-muted">開始日</label>
                     <input type="date" id="startDate" class="form-control">
@@ -48,25 +90,42 @@
                     <label class="small text-muted">終了日</label>
                     <input type="date" id="endDate" class="form-control">
                 </div>
-                <button class="btn btn-primary w-100 mb-3" onclick="addDateRange()">📅 この期間をまとめて追加</button>
-                <ul id="dateList" class="list-group" style="max-height: 200px; overflow-y: auto;"></ul>
+                <button class="btn btn-primary w-100 mb-2" onclick="addDateRange()">📅 期間をまとめて追加</button>
+                <button class="btn btn-sm btn-outline-danger w-100 mb-3" onclick="clearDates()">🧹 受付日をすべてクリア</button>
+                <ul id="dateList" class="list-group" style="max-height: 180px; overflow-y: auto;"></ul>
             </div>
 
             <div class="card p-3">
                 <h5 class="card-title fw-bold">🕒 時間帯の設定</h5>
-                <div class="input-group mb-3">
-                    <input type="text" id="newTime" class="form-control" placeholder="例: 13:00～14:00">
+                <div class="input-group mb-2">
+                    <input type="text" id="newTime" class="form-control" placeholder="例: 13:00～14:00" oninput="convertToHalfWidth(this)">
                     <button class="btn btn-primary" onclick="addTime()">追加</button>
                 </div>
+                <div class="form-text text-muted mb-2">※全角で入力しても自動的に半角（:, ~, 数字）に変換されます。</div>
+                <button class="btn btn-sm btn-outline-danger w-100 mb-3" onclick="clearTimes()">🧹 時間帯をすべてクリア</button>
                 <ul id="timeList" class="list-group"></ul>
             </div>
 
-            <button class="btn btn-success w-100 py-2 fw-bold mb-4" onclick="saveSettings()">⚙️ 設定を保存する</button>
+            <div class="card p-3 border-danger">
+                <h5 class="card-title fw-bold text-danger">🔒 管理者パスワードの変更</h5>
+                <div class="input-group mb-2">
+                    <input type="password" id="newPassword" class="form-control" placeholder="新しいパスワードを入力">
+                    <button class="btn btn-danger" onclick="changePassword()">変更</button>
+                </div>
+            </div>
+
+            <button class="btn btn-success w-100 py-2 fw-bold mb-4 shadow" onclick="saveSettings()">⚙️ 設定を保存する</button>
         </div>
 
         <div class="col-md-7">
             <div class="card p-3">
-                <h5 class="card-title fw-bold mb-3">👤 現在のご予約一覧</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 class="card-title fw-bold mb-0">👤 現在のご予約一覧</h5>
+                    <div>
+                        <button class="btn btn-sm btn-primary me-1 fw-bold" onclick="window.print()">🖨️ リストを印刷</button>
+                        <button class="btn btn-sm btn-outline-danger fw-bold" onclick="clearReservations()">🧹 予約を全消去</button>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
@@ -86,172 +145,166 @@
 
 <script>
     // ⚠️【最重要】Google GASのURLをここに貼り付けてください！
-    const APP_URL = "https://script.google.com/macros/s/AKfycbzV6IgtxUsNGMtL4tvWAlI4gqItxo5bhG_4HxGlrHG1X-ft5yPH3dtMsPTbthAPnYhY/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbzmw5WRsfz3_5v1HStsqrAGdFbkNzGbfxONK9GWdjxDt1z88X8iPGxS3h7LehEmJjY/exec";
 
-    let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, reservations: [] };
+    let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, deadlineMode: 'days', deadlineDays: 0, deadlineValue: '', reservations: [] };
+
+    // 💡 入力された文字をリアルタイムに半角へ変換する関数
+    function convertToHalfWidth(input) {
+        let val = input.value;
+        // 全角数字を半角数字に変換
+        val = val.replace(/[０-９]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        });
+        // 全角コロン「：」を半角「:」に変換
+        val = val.replace(/：/g, ':');
+        // 全角の波線やダッシュを半角のハイフン「-」に統一（※ここを統一するとお客様画面と100%一致します）
+        val = val.replace(/[〜～〜ー]/g, '-');
+        // 空白（スペース）を消去
+        val = val.replace(/\s+/g, '');
+        
+        input.value = val;
+    }
+
+    function toggleDeadlineInput() {
+        const mode = document.querySelector('input[name="deadlineMode"]:checked').value;
+        const divDays = document.getElementById('divDays');
+        const divAbsolute = document.getElementById('divAbsolute');
+        const help = document.getElementById('deadlineHelp');
+        
+        if (mode === 'days') {
+            divDays.classList.remove('d-none'); divAbsolute.classList.add('d-none');
+            help.textContent = "※0にすると当日まで受付。2にすると各予約日の2日前に自動で隠れます。";
+        } else {
+            divDays.classList.add('d-none'); divAbsolute.classList.remove('d-none');
+            help.textContent = "※設定日時を過ぎると、お客様画面のすべての日付選択肢が同時に消滅します。";
+        }
+    }
+
+    function clearDeadlineSettings() {
+        document.getElementById('modeDays').checked = true;
+        document.getElementById('deadlineDays').value = 0;
+        document.getElementById('deadlineValue').value = "";
+        toggleDeadlineInput();
+        alert("締め切り設定をリセットしました（当日まで受付）。\n反映するには一番下の「設定を保存する」ボタンを押してください。");
+    }
+
+    async function checkPassword() {
+        const SESSION_TIMEOUT = 5 * 60 * 1000;
+        const lastLogin = localStorage.getItem('admin_login_time');
+        const now = Date.now();
+        if (lastLogin && (now - parseInt(lastLogin, 10) < SESSION_TIMEOUT)) { document.body.style.display = "block"; loadData(); return; }
+        const userInput = prompt("管理者パスワードを入力してください：");
+        if (!userInput) { lockScreen(); return; }
+        document.body.style.display = "block"; showStatus("パスワードを認証中...");
+        try {
+            const res = await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyPassword', password: userInput }) });
+            const result = await res.json();
+            if (result.status === "success") { localStorage.setItem('admin_login_time', Date.now().toString()); showStatus(""); loadData(); } else { alert("パスワードが正しくありません。"); lockScreen(); }
+        } catch(e) { alert("通信エラーが発生しました。"); lockScreen(); }
+    }
+
+    function lockScreen() { document.body.innerHTML = "<div class='container mt-5 text-center'><h3 class='text-danger'>🔒 アクセス権限がありません</h3></div>"; document.body.style.display = "block"; }
+
+    async function changePassword() {
+        const newPw = document.getElementById('newPassword').value.trim(); if (!newPw) { alert('入力してください'); return; } if (!confirm('変更しますか？')) return;
+        showStatus("パスワードを更新中...");
+        try {
+            const res = await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', newPassword: newPw }) });
+            const result = await res.json();
+            if (result.status === "success") { alert('変更しました！'); document.getElementById('newPassword').value = ""; localStorage.removeItem('admin_login_time'); } else { alert('失敗しました。'); }
+            showStatus("");
+        } catch(e) { showStatus("通信エラー", true); }
+    }
 
     async function loadData() {
         showStatus("データを読み込み中...");
         try {
-            const res = await fetch(APP_URL);
+            const res = await fetch(APP_URL + "?mode=admin");
             serverData = await res.json();
             document.getElementById('maxCapacity').value = serverData.maxCapacity || 2;
-            renderSettings();
-            renderReservations();
-            showStatus("");
-        } catch(e) { 
-            showStatus("データの読み込みに失敗しました。URLやデプロイ権限をご確認ください。", true); 
-        }
+            
+            if (serverData.deadlineMode === "absolute") { document.getElementById('modeAbsolute').checked = true; } 
+            else { document.getElementById('modeDays').checked = true; }
+            document.getElementById('deadlineDays').value = serverData.deadlineDays || 0;
+            document.getElementById('deadlineValue').value = serverData.deadlineValue || "";
+            
+            toggleDeadlineInput(); renderSettings(); renderReservations(); showStatus("");
+        } catch(e) { showStatus("データの読み込みに失敗しました。", true); }
     }
 
     function formatDateDisplay(dStr) {
-        if (!dStr) return "";
-        if (typeof dStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
-            return dStr;
-        }
-        try {
-            const d = new Date(dStr);
-            if (isNaN(d.getTime())) return String(dStr);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd}`;
-        } catch (e) {
-            return String(dStr);
-        }
+        if (!dStr) return ""; if (typeof dStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dStr)) return dStr;
+        try { const d = new Date(dStr); if (isNaN(d.getTime())) return String(dStr); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; } catch (e) { return String(dStr); }
     }
 
     function renderSettings() {
-        const classDiv = document.getElementById('classList');
-        classDiv.innerHTML = serverData.classes.length === 0 ? '<span class="text-muted small">登録なし</span>' : '';
-        serverData.classes.forEach((c, idx) => {
-            classDiv.innerHTML += `
-                <span class="badge badge-class p-2 d-flex align-items-center gap-2">
-                    ${c}クラス 
-                    <button type="button" class="btn-close" style="font-size:0.6rem;" onclick="removeClass(${idx})"></button>
-                </span>`;
-        });
-
-        const dateUl = document.getElementById('dateList');
-        dateUl.innerHTML = serverData.dates.length === 0 ? '<li class="list-group-item text-muted text-center">日付が登録されていません</li>' : '';
-        
-        const cleanedDates = serverData.dates.map(d => formatDateDisplay(d)).filter(Boolean);
-        const uniqueDates = [...new Set(cleanedDates)].sort();
-
-        uniqueDates.forEach((d) => {
-            const idx = serverData.dates.indexOf(d);
-            const originalIdx = serverData.dates.findIndex(orig => formatDateDisplay(orig) === d);
-            dateUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${d}<button class="btn btn-sm btn-outline-danger" onclick="removeDate(${originalIdx !== -1 ? originalIdx : idx})">削除</button></li>`;
-        });
-
-        const timeUl = document.getElementById('timeList');
-        timeUl.innerHTML = serverData.times.length === 0 ? '<li class="list-group-item text-muted text-center">時間帯が登録されていません</li>' : '';
-        serverData.times.forEach((t, idx) => {
-            timeUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${t}<button class="btn btn-sm btn-outline-danger" onclick="removeTime(${idx})">削除</button></li>`;
-        });
+        const classDiv = document.getElementById('classList'); classDiv.innerHTML = serverData.classes.length === 0 ? '<span class="text-muted small">登録なし</span>' : '';
+        serverData.classes.forEach((c, idx) => { classDiv.innerHTML += `<span class="badge badge-class p-2 d-flex align-items-center gap-2">${c}クラス <button type="button" class="btn-close" style="font-size:0.6rem;" onclick="removeClass(${idx})"></button></span>`; });
+        const dateUl = document.getElementById('dateList'); dateUl.innerHTML = serverData.dates.length === 0 ? '<li class="list-group-item text-muted text-center">日付登録なし</li>' : '';
+        const cleanedDates = serverData.dates.map(d => formatDateDisplay(d)).filter(Boolean); const uniqueDates = [...new Set(cleanedDates)].sort();
+        uniqueDates.forEach((d) => { const originalIdx = serverData.dates.findIndex(orig => formatDateDisplay(orig) === d); dateUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${d}<button class="btn btn-sm btn-outline-danger" onclick="removeDate(${originalIdx})">削除</button></li>`; });
+        const timeUl = document.getElementById('timeList'); timeUl.innerHTML = serverData.times.length === 0 ? '<li class="list-group-item text-muted text-center">時間帯登録なし</li>' : '';
+        serverData.times.forEach((t, idx) => { timeUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${t}<button class="btn btn-sm btn-outline-danger" onclick="removeTime(${idx})">削除</button></li>`; });
     }
 
     function renderReservations() {
-        const tbody = document.getElementById('resTable');
-        tbody.innerHTML = serverData.reservations.length === 0 ? '<tr><td colspan="3" class="text-muted text-center py-4">現在ご予約はありません</td></tr>' : '';
-        serverData.reservations.forEach((r, i) => {
-            const cleanResDate = formatDateDisplay(r.date);
-            tbody.innerHTML += `
-                <tr>
-                    <td>
-                        <span class="fw-bold text-primary">${cleanResDate}</span><br>
-                        <small class="text-muted">${r.time}</small><br>
-                        <span class="badge bg-secondary">${r.className}クラス</span>
-                    </td>
-                    <td>
-                        <strong>${r.name} 様</strong><br>
-                        <small class="text-muted">昼食: ${r.lunch}</small><br>
-                        <small class="text-muted" style="word-break: break-all;">${r.email || 'なし'}</small>
-                    </td>
-                    <td><button class="btn btn-danger btn-sm" onclick="deleteRes(${i})">削除</button></td>
-                </tr>`;
+        const tbody = document.getElementById('resTable'); tbody.innerHTML = serverData.reservations.length === 0 ? '<tr><td colspan="3" class="text-muted text-center py-4">現在ご予約はありません</td></tr>' : '';
+        serverData.reservations.forEach((r, i) => { 
+            tbody.innerHTML += `<tr><td><span class="fw-bold text-primary">${formatDateDisplay(r.date)}</span><br><small class="text-muted">${r.time}</small><br><span class="badge bg-secondary">${r.className}クラス</span></td><td><strong>${r.name} 様</strong><br><small class="text-muted">昼食: ${r.lunch}</small><br><small class="text-muted print-no-email" style="word-break: break-all;">${r.email || 'なし'}</small></td><td><button class="btn btn-danger btn-sm" onclick="deleteRes(${i})">削除</button></td></tr>`; 
         });
     }
 
     function addDateRange() {
-        const startVal = document.getElementById('startDate').value;
-        const endVal = document.getElementById('endDate').value;
-        if (!startVal || !endVal) { alert('開始日と終了日の両方を選択してください'); return; }
-        
-        let d1 = new Date(startVal);
-        let d2 = new Date(endVal);
-        if (d1 > d2) { alert('終了日は開始日より後の日付にしてください'); return; }
-
-        let count = 0;
-        while (d1 <= d2) {
-            let yyyy = d1.getFullYear();
-            let mm = String(d1.getMonth() + 1).padStart(2, '0');
-            let dd = String(d1.getDate()).padStart(2, '0');
-            let dateStr = `${yyyy}-${mm}-${dd}`;
-            
-            if (!serverData.dates.includes(dateStr)) {
-                serverData.dates.push(dateStr);
-                count++;
-            }
-            d1.setDate(d1.getDate() + 1);
-        }
-        alert(`${count}日分の日付を追加しました！\n一番下の「設定を保存する」ボタンを押すと確定します。`);
-        renderSettings();
+        const startVal = document.getElementById('startDate').value; const endVal = document.getElementById('endDate').value; if (!startVal || !endVal) { alert('開始日と終了日を選択してください'); return; }
+        let d1 = new Date(startVal), d2 = new Date(endVal); if (d1 > d2) { alert('終了日は開始日より後にしてください'); return; }
+        let count = 0; while (d1 <= d2) { let dateStr = `${d1.getFullYear()}-${String(d1.getMonth() + 1).padStart(2, '0')}-${String(d1.getDate()).padStart(2, '0')}`; if (!serverData.dates.includes(dateStr)) { serverData.dates.push(dateStr); count++; } d1.setDate(d1.getDate() + 1); }
+        alert(`${count}日分追加しました！最後に保存ボタンで確定してください。`); renderSettings();
     }
 
-    function addClass() {
-        const name = document.getElementById('newClass').value.trim();
-        if(!name) return;
-        if(serverData.classes.includes(name)) { alert('既に存在するクラス名です'); return; }
-        serverData.classes.push(name); document.getElementById('newClass').value = ""; renderSettings();
+    function clearDates() { if (confirm('すべての受付日を一括消去しますか？（保存するまで反映されません）')) { serverData.dates = []; renderSettings(); } }
+    function clearTimes() { if (confirm('すべての時間帯を一括消去しますか？（保存するまで反映されません）')) { serverData.times = []; renderSettings(); } }
+
+    async function clearReservations() {
+        if (!confirm('🚨【超重要警告】🚨\nすべての予約データを完全に消去しますか？この操作は取り消せません。')) return;
+        showStatus("予約をすべて消去中...");
+        try {
+            const res = await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'clearReservations' }) });
+            const result = await res.json(); if (result.status === "success") { alert('リセットしました。'); loadData(); } else { alert('消去に失敗しました。'); }
+        } catch(e) { showStatus("通信エラー", true); }
     }
-    function removeClass(idx) { if(confirm('このクラスを削除しますか？')) { serverData.classes.splice(idx, 1); renderSettings(); } }
+
+    function addClass() { const name = document.getElementById('newClass').value.trim(); if(!name) return; if(serverData.classes.includes(name)) { alert('既に存在します'); return; } serverData.classes.push(name); document.getElementById('newClass').value = ""; renderSettings(); }
+    function removeClass(idx) { if(confirm('削除しますか？')) { serverData.classes.splice(idx, 1); renderSettings(); } }
     function removeDate(idx) { if(idx !== -1) { serverData.dates.splice(idx, 1); renderSettings(); } }
-    function addTime() {
-        const val = document.getElementById('newTime').value.trim();
-        if(!val || serverData.times.includes(val)) return;
-        serverData.times.push(val); document.getElementById('newTime').value = ""; renderSettings();
-    }
+    function addTime() { const val = document.getElementById('newTime').value.trim(); if(!val || serverData.times.includes(val)) return; serverData.times.push(val); document.getElementById('newTime').value = ""; renderSettings(); }
     function removeTime(idx) { serverData.times.splice(idx, 1); renderSettings(); }
 
     async function saveSettings() {
         showStatus("設定を保存中...");
         const cap = parseInt(document.getElementById('maxCapacity').value, 10) || 2;
+        const mode = document.querySelector('input[name="deadlineMode"]:checked').value;
+        const deadDays = parseInt(document.getElementById('deadlineDays').value, 10) || 0;
+        const deadVal = document.getElementById('deadlineValue').value;
         try {
             await fetch(APP_URL, {
                 method: 'POST',
-                body: JSON.stringify({
-                    action: 'updateSettings', dates: serverData.dates, times: serverData.times, classes: serverData.classes, maxCapacity: cap
-                })
+                body: JSON.stringify({ action: 'updateSettings', dates: serverData.dates, times: serverData.times, classes: serverData.classes, maxCapacity: cap, deadlineMode: mode, deadlineDays: deadDays, deadlineValue: deadVal })
             });
-            alert('設定を保存しました！');
-            loadData();
+            alert('すべての設定を保存しました！'); loadData();
         } catch(e) { showStatus("保存に失敗しました。", true); }
     }
 
     async function deleteRes(i) {
-        if(confirm('スプレッドシートからこの予約を削除しますか？')) {
-            showStatus("削除中...");
-            const target = serverData.reservations[i];
-            const cleanTargetDate = formatDateDisplay(target.date);
-            try {
-                await fetch(APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'deleteReservation', date: cleanTargetDate, className: target.className, time: target.time, name: target.name })
-                });
-                loadData();
-            } catch(e) { showStatus("削除エラー", true); }
+        if(confirm('この予約を削除しますか？')) {
+            showStatus("削除中..."); const target = serverData.reservations[i];
+            try { await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteReservation', date: formatDateDisplay(target.date), className: target.className, time: target.time, name: target.name }) }); loadData(); } catch(e) { showStatus("削除エラー", true); }
         }
     }
 
-    function showStatus(msg, isError = false) {
-        const div = document.getElementById('status');
-        if(!msg) { div.classList.add('d-none'); return; }
-        div.className = `alert ${isError ? 'alert-danger' : 'alert-info'} text-center`;
-        div.textContent = msg; div.classList.remove('d-none');
-    }
+    function showStatus(msg, isError = false) { const div = document.getElementById('status'); if(!msg) { div.classList.add('d-none'); return; } div.className = `alert ${isError ? 'alert-danger' : 'alert-info'} text-center`; div.textContent = msg; div.classList.remove('d-none'); }
 
-    loadData();
+    checkPassword();
 </script>
 </body>
 </html>
