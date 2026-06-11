@@ -65,9 +65,9 @@
                 <h2>🔒 システム基本管理（パスワード・通知メール設定）</h2>
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <div>
-                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px; color:#4a5568;">現在のログインパスワード変更</label>
+                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px; color:#4a5568;">新しい管理用パスワードに変更</label>
                         <div class="form-inline" style="margin-bottom:0;">
-                            <input type="text" v-model="config.adminPassword" placeholder="新しいパスワード" style="width:100%;">
+                            <input type="password" v-model="config.adminPassword" placeholder="••••••••" style="width:100%;">
                         </div>
                     </div>
                     <div>
@@ -292,7 +292,7 @@
             const deleteReservationRow = (id) => { if(confirm("この予約を取り消しますか？")) postAction({ type:"deleteReservationRow", id }); };
             const clearAllReservations = () => { if(confirm("【警告】すべての予約データを完全に全削除します。よろしいですか？")) postAction({ type:"clearAllReservations" }); };
 
-            // システム設定の保存（パスワード・締め切りルール・メール共通）
+            // システム設定の保存
             const saveSystemConfig = () => { 
                 if(!config.value.adminPassword.trim()) { alert("パスワードを空欄にすることはできません。"); return; }
                 postAction({ type:"saveDeadline", config: config.value }); 
