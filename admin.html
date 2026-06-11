@@ -9,7 +9,7 @@
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 1.8rem; }
         
-        /* 💡 2カラムレイアウト（維持） */
+        /* 2カラムレイアウト */
         .admin-workspace { display: flex; gap: 25px; align-items: flex-start; max-width: 1400px; margin: 0 auto; }
         .column-left { flex: 1; min-width: 450px; display: flex; flex-direction: column; gap: 20px; }
         .column-right { flex: 1.2; min-width: 550px; position: sticky; top: 20px; }
@@ -18,7 +18,7 @@
         .card h2 { margin-top: 0; border-left: 4px solid #3498db; padding-left: 10px; font-size: 1.15rem; color: #2c3e50; margin-bottom: 15px; }
         
         .form-inline { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        input[type="text"], input[type="password"], input[type="date"], select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95rem; }
+        input[type="text"], input[type="password"], input[type="date"], input[type="email"], select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95rem; }
         button { padding: 8px 15px; border: none; border-radius: 4px; background: #3498db; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
         button:hover { background: #2980b9; }
         button.danger { background: #e74c3c; }
@@ -60,6 +60,27 @@
     <div v-else class="admin-workspace">
         
         <div class="column-left">
+            
+            <div class="card">
+                <h2>🔒 システム基本管理（パスワード変更等）</h2>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px; color:#4a5568;">現在のログインパスワード変更</label>
+                        <div class="form-inline" style="margin-bottom:0;">
+                            <input type="text" v-model="config.adminPassword" placeholder="新しいパスバーワード" style="flex:1;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px; color:#4a5568;">管理者通知用メールアドレス</label>
+                        <div class="form-inline" style="margin-bottom:0;">
+                            <input type="email" v-model="config.adminEmail" placeholder="例：園のアドレス@example.com" style="width:100%;">
+                        </div>
+                        <span style="font-size:0.75rem; color:#718096;">※空欄の場合は、GASを実行しているGoogleアカウント宛にBCC送信されます。</span>
+                    </div>
+                    <button @click="saveSystemConfig" style="width:100%; background:#2ecc71;">💾 パスワード・メール設定を保存する</button>
+                </div>
+            </div>
+
             <div class="card">
                 <h2>⏳ 予約締め切りルールの設定</h2>
                 <div style="display:flex; flex-direction:column; gap:8px; font-size:0.95rem;">
@@ -73,7 +94,7 @@
                         各参加日の <input type="number" v-model="config.deadlineDays" style="width:50px; padding:4px;"> 日前に自動締め切り
                     </div>
                 </div>
-                <button @click="saveDeadline" style="margin-top:15px; width:100%;">⚙️ 締め切りルールを保存・適用する</button>
+                <button @click="saveSystemConfig" style="margin-top:15px; width:100%;">⚙️ 締め切りルールを保存・適用する</button>
             </div>
 
             <div class="card">
@@ -187,6 +208,8 @@
 
 <script>
     const { createApp, ref, onMounted } = Vue;
+    
+    // 🔗 ここにお使いの最新のGASウェブアプリURLを貼り付けてください
     const GAS_URL = "https://script.google.com/macros/s/AKfycbx-BIEOU51sCXEUt7gRD04zCA2Wf-PVGkF4r6aoHxB3n6ZCCf64KUjtpDmxTeqbAd_R/exec"; 
 
     createApp({
@@ -196,7 +219,9 @@
             const newClassName = ref(""); const newDateValue = ref("");
             const dateRange = ref({ start: "", end: "" });
             const timeBatch = ref({ startDate: "", endDate: "", slotText: "" });
-            const config = ref({ deadlineType: "none", deadlineAbsolute: "", deadlineDays: 1 });
+            
+            // システム初期設定オブジェクト（adminPassword を紐付け）
+            const config = ref({ deadlineType: "none", deadlineAbsolute: "", deadlineDays: 1, adminEmail: "", adminPassword: "admin" });
 
             const formatDisplayDate = (dStr) => {
                 if(!dStr) return "";
@@ -228,7 +253,10 @@
                     dates.value = json.dates || [];
                     times.value = json.times || [];
                     reserves.value = json.reserves || [];
-                    if(json.config) config.value = json.config;
+                    if(json.config) {
+                        // サーバーから読み込んだデータを設定に反映（パスワードが未設定なら初期値 admin）
+                        config.value = { ...config.value, ...json.config };
+                    }
                 } catch(e) { alert("データ取得エラー"); }
                 finally { loading.value = false; }
             };
@@ -266,10 +294,16 @@
             const deleteReservationRow = (id) => { if(confirm("この予約を取り消しますか？")) postAction({ type:"deleteReservationRow", id }); };
             const clearAllReservations = () => { if(confirm("【警告】すべての予約データを完全に全削除します。よろしいですか？")) postAction({ type:"clearAllReservations" }); };
 
-            const saveDeadline = () => { postAction({ type:"saveDeadline", config: config.value }); };
+            // 💡 パスワード、管理者メール、締め切り等のシステム設定を保存
+            const saveSystemConfig = () => { 
+                if(!config.value.adminPassword.trim()) { alert("パスワードを空欄にすることはできません。"); return; }
+                postAction({ type:"saveDeadline", config: config.value }); 
+                alert("管理設定（パスワード/メール/締め切り等）を保存しました。");
+            };
+            
             const printReservations = () => { window.print(); };
 
-            return { loading, isAuthorized, passwordInput, classes, dates, times, reserves, newClassName, newDateValue, dateRange, timeBatch, config, login, addClass, deleteClass, clearClasses, addSingleDate, deleteDate, clearDates, generateDateRange, getTimesForDate, applyTimeBatch, deleteTimeRow, clearAllTimes, deleteReservationRow, clearAllReservations, saveDeadline, printReservations, formatDisplayDate };
+            return { loading, isAuthorized, passwordInput, classes, dates, times, reserves, newClassName, newDateValue, dateRange, timeBatch, config, login, addClass, deleteClass, clearClasses, addSingleDate, deleteDate, clearDates, generateDateRange, getTimesForDate, applyTimeBatch, deleteTimeRow, clearAllTimes, deleteReservationRow, clearAllReservations, saveSystemConfig, printReservations, formatDisplayDate };
         }
     }).mount('#app');
 </script>
