@@ -9,7 +9,7 @@
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; font-size: 1.8rem; }
         
-        /* 💡 画面を左と右に綺麗に分ける2カラムレイアウト */
+        /* 💡 2カラムレイアウト（維持） */
         .admin-workspace { display: flex; gap: 25px; align-items: flex-start; max-width: 1400px; margin: 0 auto; }
         .column-left { flex: 1; min-width: 450px; display: flex; flex-direction: column; gap: 20px; }
         .column-right { flex: 1.2; min-width: 550px; position: sticky; top: 20px; }
@@ -60,7 +60,6 @@
     <div v-else class="admin-workspace">
         
         <div class="column-left">
-            
             <div class="card">
                 <h2>⏳ 予約締め切りルールの設定</h2>
                 <div style="display:flex; flex-direction:column; gap:8px; font-size:0.95rem;">
@@ -188,7 +187,7 @@
 
 <script>
     const { createApp, ref, onMounted } = Vue;
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwuV8MxHJUI7kXHIJ8oBn_5L7I-oASZeN69lQS6VDHeDH3MEnSWoPKyovBtoBCPZl9h/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby3D15-4o2QK5nl_wDVpa2eDndlOS4wQW5uU55p6mUTH_37b1rR3n-rvEk6Aca1sLkX/exec"; 
 
     createApp({
         setup() {

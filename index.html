@@ -18,7 +18,8 @@
         .slot-btn { padding: 12px; text-align: center; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; background: #fff; transition: all 0.2s; }
         .slot-btn:hover:not(.disabled) { border-color: #3182ce; background: #ebf8ff; }
         .slot-btn.selected { border-color: #3182ce; background: #3182ce; color: white; font-weight: bold; }
-        .slot-btn.disabled { background: #edf2f7; color: #a0aec0; cursor: not-allowed; border-color: #edf2f7; }
+        /* 💡 埋まっている（満席）のボタンは、グレーアウトしてポインターを禁止（クリックしても無反応）にする */
+        .slot-btn.disabled { background: #edf2f7; color: #a0aec0; cursor: not-allowed; border-color: #edf2f7; pointer-events: none; }
         .slot-num { font-size: 0.75rem; display: block; margin-top: 4px; color: #718096; }
         .slot-btn.selected .slot-num { color: #ebf8ff; }
         button.submit-btn { width: 100%; padding: 14px; background: #3182ce; color: white; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
@@ -74,11 +75,11 @@
                 <div v-else class="grid-slots">
                     <div v-for="s in slots" :key="s.time" 
                          class="slot-btn" 
-                         :class="{ disabled: !s.available && form.time !== s.time, selected: form.time === s.time }"
+                         :class="{ disabled: !s.available, selected: form.time === s.time }"
                          @click="selectSlot(s)">
                         <strong>{{ s.time }}</strong>
                         <span class="slot-num" v-if="s.available">受付中</span>
-                        <span class="slot-num" v-else style="color:#e53e3e;">満席</span>
+                        <span class="slot-num" v-else style="color:#e53e3e; font-weight:bold;">満席</span>
                     </div>
                 </div>
             </div>
@@ -129,7 +130,7 @@
 <script>
     const { createApp, ref, computed, onMounted } = Vue;
     
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwuV8MxHJUI7kXHIJ8oBn_5L7I-oASZeN69lQS6VDHeDH3MEnSWoPKyovBtoBCPZl9h/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby3D15-4o2QK5nl_wDVpa2eDndlOS4wQW5uU55p6mUTH_37b1rR3n-rvEk6Aca1sLkX/exec"; 
 
     createApp({
         setup() {
@@ -147,19 +148,16 @@
                 return form.value.class && form.value.date && form.value.time && form.value.name.trim() && form.value.email.trim() && form.value.meetingType;
             });
 
-            // GAS側のオリジナルの日付文字列キーを安全に保ちつつ、表示だけ「〇月〇日」にする
             const formatJapaneseDate = (dateStr) => {
                 if (!dateStr) return "";
                 let s = String(dateStr).trim();
                 if (s.includes("T")) s = s.split("T")[0];
                 s = s.replace(/\//g, "-");
                 
-                // 2026-06-23 のように4桁西暦から始まる場合
                 let longMatch = s.match(/^(\d{4})[-年](\d{1,2})[-月](\d{1,2})/);
                 if (longMatch) {
                     return `${Number(longMatch[2])}月${Number(longMatch[3])}日`;
                 }
-                // すでに 6-23 などの場合
                 let shortMatch = s.match(/^(\d{1,2})[-月](\d{1,2})/);
                 if (shortMatch) {
                     return `${Number(shortMatch[1])}月${Number(shortMatch[2])}日`;
@@ -176,7 +174,6 @@
                     slots.value = [];
                     return;
                 }
-                // GASから渡ってきた「オリジナルの日付文字列（西暦付き等）」をそのままセット
                 form.value.date = dates.value[selectedDateIndex.value].date;
                 buildSlots();
             };
@@ -184,10 +181,8 @@
             const buildSlots = () => {
                 if (!form.value.date) return;
                 
-                // 同一の日付文字列を持つ時間枠設定を抽出
                 const matchedTimes = masterTimes.filter(t => String(t.date).trim() === String(form.value.date).trim());
                 
-                // 時間枠の重複を排除して1つにまとめる
                 const uniqueTimeStrings = [];
                 const seen = new Set();
                 for (const t of matchedTimes) {
@@ -199,7 +194,6 @@
                 }
                 uniqueTimeStrings.sort();
 
-                // 予約状況をチェックしてボタン化
                 slots.value = uniqueTimeStrings.map(tStr => {
                     const isTaken = masterReserves.some(r => 
                         String(r.date).trim() === String(form.value.date).trim() && 
@@ -210,7 +204,8 @@
             };
 
             const selectSlot = (s) => {
-                if (!s.available && form.value.time !== s.time) return;
+                // 💡 満席（availableがfalse）の場合は選択処理を完全にスキップ
+                if (!s.available) return;
                 form.value.time = s.time;
             };
 
@@ -223,7 +218,6 @@
                     finalMeetingType += ` (備考: ${form.value.note.trim()})`;
                 }
 
-                // GASが期待する100%正しいオリジナル形式でカチッと送信
                 const payload = {
                     type: "reserve",
                     class: form.value.class,
