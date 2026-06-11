@@ -149,42 +149,64 @@
             const classes = ref([]); const dates = ref([]); const slots = ref([]);
             const form = ref({ class: "", date: "", time: "", name: "", meetingType: "対面参加", email: "", note: "" });
 
+            // 全マスターデータ保持用
+            let masterTimes = [];
+            let masterReserves = [];
+
             const isFormValid = computed(() => {
                 return form.value.class && form.value.date && form.value.time && form.value.name.trim() && form.value.email.trim() && form.value.meetingType;
             });
 
-            const normalizeToIsoDate = (rawStr) => {
-                if (!rawStr) return "";
-                let d = new Date(rawStr);
-                if (isNaN(d.getTime())) {
-                    let match = rawStr.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-                    if (match) return `${match[1]}-${String(match[2]).padStart(2,'0')}-${String(match[3]).padStart(2,'0')}`;
-                    return rawStr;
+            // 💡 日付から「月」と「日」だけをきれいに抜き出す最強の関数（表記ブレ吸収用）
+            const extractMonthDay = (str) => {
+                if (!str) return "";
+                const s = String(str).replace(/\//g, "-");
+                const match = s.match(/(\d{1,2})[-月](\d{1,2})/);
+                if (match) {
+                    return `${Number(match[1])}-${Number(match[2])}`; // 例: "6-23"
                 }
-                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                return s;
             };
 
             const formatJapaneseDate = (dStr) => {
                 if(!dStr) return '';
-                const clean = normalizeToIsoDate(dStr);
-                const parts = clean.split("-");
-                if (parts.length < 3) return dStr;
-                return `${Number(parts[1])}月${Number(parts[2])}日`;
+                const md = extractMonthDay(dStr);
+                const parts = md.split("-");
+                if (parts.length === 2) {
+                    return `${parts[0]}月${parts[1]}日`;
+                }
+                return dStr;
             };
 
             const onClassChange = () => { form.value.time = ""; };
 
-            // 💡 現在のGASの仕様（getSlotsに日付だけを投げて全クラス共通の空き枠を貰う方式）に完全合致
+            // 💡 どんな日付形式のデータがスプレッドシートにあっても、月・日の一致だけで時間を引っ張ってくるロジック
             const fetchAvailableSlots = async () => {
                 if (!form.value.date) return;
                 loadingSlots.value = true;
                 form.value.time = "";
+                
                 try {
-                    const res = await fetch(`${GAS_URL}?action=getSlots&date=${encodeURIComponent(form.value.date)}`);
-                    const json = await res.json();
-                    slots.value = json.slots || [];
-                } catch(e) { alert("空き状況の取得に失敗しました。"); }
-                finally { loadingSlots.value = false; }
+                    const targetMD = extractMonthDay(form.value.date); // 選択された日の "6-23"
+                    
+                    // 1. 今回選んだ日付に合致する時間枠をマスターから抽出
+                    const matchedTimes = masterTimes.filter(t => extractMonthDay(t.date) === targetMD);
+                    
+                    // 2. すでに埋まっている予約データから、今回選んだ日・クラスに該当するものをカウント
+                    const targetSlots = matchedTimes.map(t => {
+                        const isTaken = masterReserves.some(r => {
+                            return extractMonthDay(r.date) === targetMD && 
+                                   String(r.time).trim() === String(t.time).trim();
+                        });
+                        return { time: t.time, available: !isTaken };
+                    });
+
+                    slots.value = targetSlots;
+                } catch(e) { 
+                    alert("空き状況の取得に失敗しました。"); 
+                } finally { 
+                    loadingSlots.value = false; 
+                }
             };
 
             const selectSlot = (s) => {
@@ -215,7 +237,7 @@
                     const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
                     const json = await res.json();
                     if (json.status === "success") { pageStatus.value = "success"; } 
-                    else { alert("予約に失敗しました: " + json.message); submitting.value = false; fetchAvailableSlots(); }
+                    else { alert("予約に失敗しました: " + json.message); submitting.value = false; }
                 } catch(e) { alert("通信エラーが発生しました。"); submitting.value = false; }
             };
 
@@ -223,8 +245,14 @@
                 try {
                     const res = await fetch(GAS_URL); const json = await res.json();
                     if (json.isClosed) { pageStatus.value = "closed"; return; }
+                    
                     classes.value = json.classes || [];
-                    dates.value = (json.dates || []).map(d => ({ ...d, date: normalizeToIsoDate(d.date) }));
+                    dates.value = json.dates || [];
+                    
+                    // 💡 初期読み込み時に、裏側の時間マスターと予約一覧をHTML側にがっつり保存しておく
+                    masterTimes = json.times || [];
+                    masterReserves = json.reserves || [];
+                    
                     pageStatus.value = "form";
                 } catch(e) { pageStatus.value = "closed"; }
             });
