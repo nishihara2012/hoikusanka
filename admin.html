@@ -65,9 +65,9 @@
                 <h2>🔒 システム基本管理（パスワード・通知メール設定）</h2>
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <div>
-                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px; color:#4a5568;">新しい管理用パスワードに変更</label>
+                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px; color:#4a5568;">新しい管理用パスワードに変更（変更時のみ入力）</label>
                         <div class="form-inline" style="margin-bottom:0;">
-                            <input type="password" v-model="config.adminPassword" placeholder="••••••••" style="width:100%;">
+                            <input type="password" v-model="newPasswordInput" placeholder="変更しない場合は空欄のまま" style="width:100%;">
                         </div>
                     </div>
                     <div>
@@ -220,7 +220,9 @@
             const dateRange = ref({ start: "", end: "" });
             const timeBatch = ref({ startDate: "", endDate: "", slotText: "" });
             
-            const config = ref({ deadlineType: "none", deadlineAbsolute: "", deadlineDays: 1, adminEmail: "", adminPassword: "admin" });
+            // パスワード変更用の独立した入力欄
+            const newPasswordInput = ref("");
+            const config = ref({ deadlineType: "none", deadlineAbsolute: "", deadlineDays: 1, adminEmail: "", adminPassword: "" });
 
             const formatDisplayDate = (dStr) => {
                 if(!dStr) return "";
@@ -292,16 +294,27 @@
             const deleteReservationRow = (id) => { if(confirm("この予約を取り消しますか？")) postAction({ type:"deleteReservationRow", id }); };
             const clearAllReservations = () => { if(confirm("【警告】すべての予約データを完全に全削除します。よろしいですか？")) postAction({ type:"clearAllReservations" }); };
 
-            // システム設定の保存
+            // 💡 システム設定の保存処理を安全に改良
             const saveSystemConfig = () => { 
-                if(!config.value.adminPassword.trim()) { alert("パスワードを空欄にすることはできません。"); return; }
-                postAction({ type:"saveDeadline", config: config.value }); 
+                // コピーを作成
+                const sendConfig = { ...config.value };
+                
+                // パスワード変更欄に文字が入力されている場合のみ、パスワードを上書きする
+                if (newPasswordInput.value.trim()) {
+                    sendConfig.adminPassword = newPasswordInput.value.trim();
+                }
+                
+                // GAS側にデータを送信
+                postAction({ type:"saveDeadline", config: sendConfig }); 
+                
+                // 保存が成功したらパスワード欄を空に戻す
+                newPasswordInput.value = "";
                 alert("管理設定（パスワード/通知用アドレス等）を保存しました。");
             };
             
             const printReservations = () => { window.print(); };
 
-            return { loading, isAuthorized, passwordInput, classes, dates, times, reserves, newClassName, newDateValue, dateRange, timeBatch, config, login, addClass, deleteClass, clearClasses, addSingleDate, deleteDate, clearDates, generateDateRange, getTimesForDate, applyTimeBatch, deleteTimeRow, clearAllTimes, deleteReservationRow, clearAllReservations, saveSystemConfig, printReservations, formatDisplayDate };
+            return { loading, isAuthorized, passwordInput, classes, dates, times, reserves, newClassName, newDateValue, dateRange, timeBatch, config, newPasswordInput, login, addClass, deleteClass, clearClasses, addSingleDate, deleteDate, clearDates, generateDateRange, getTimesForDate, applyTimeBatch, deleteTimeRow, clearAllTimes, deleteReservationRow, clearAllReservations, saveSystemConfig, printReservations, formatDisplayDate };
         }
     }).mount('#app');
 </script>
