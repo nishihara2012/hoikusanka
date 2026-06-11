@@ -26,6 +26,7 @@
         button.submit-btn:disabled { background: #cbd5e0; cursor: not-allowed; }
         .loading, .success-view { text-align: center; padding: 40px 20px; }
         .success-icon { font-size: 3.5rem; color: #48bb78; margin-bottom: 15px; }
+        .waiting-msg { color: #718096; font-size: 0.9rem; padding: 15px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; text-align: center; }
     </style>
 </head>
 <body>
@@ -57,17 +58,22 @@
                 </select>
             </div>
 
-            <div class="form-group" v-if="form.class">
+            <div class="form-group">
                 <label>2. 参加希望日を選択してください</label>
-                <select v-model="form.date" @change="fetchAvailableSlots">
+                <select v-model="form.date" @change="fetchAvailableSlots" :disabled="!form.class">
                     <option value="">-- 日付を選択 --</option>
                     <option v-for="d in dates" :key="d.id" :value="d.date">{{ formatJapaneseDate(d.date) }}</option>
                 </select>
             </div>
 
-            <div class="form-group" v-if="form.date">
+            <div class="form-group">
                 <label>3. 時間枠を選択してください</label>
-                <div v-if="loadingSlots" style="color:#718096; font-size:0.9rem;">空き枠を計算中...</div>
+                <div v-if="!form.class || !form.date" class="waiting-msg">
+                    👆 先にお子様のクラスと参加希望日を選択してください。空き枠が表示されます。
+                </div>
+                <div v-else-if="loadingSlots" style="color:#718096; font-size:0.9rem; text-align:center; padding:10px;">
+                    🔄 空き枠を計算中...
+                </div>
                 <div v-else class="grid-slots">
                     <div v-for="s in slots" :key="s.time" 
                          class="slot-btn" 
@@ -80,34 +86,32 @@
                 </div>
             </div>
 
-            <div v-if="form.time">
-                <div class="form-group">
-                    <label>4. 園児氏名（フルネーム）</label>
-                    <input type="text" v-model="form.name" placeholder="例：ひかり 太郎">
-                </div>
-
-                <div class="form-group">
-                    <label>5. 参加形式</label>
-                    <select v-model="form.meetingType">
-                        <option value="対面参加">対面参加</option>
-                        <option value="オンライン（Zoom）">オンライン（Zoom）</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>6. 保護者メールアドレス</label>
-                    <input type="email" v-model="form.email" placeholder="例：parent@example.com">
-                </div>
-
-                <div class="form-group">
-                    <label>7. 備考・伝達事項（任意）</label>
-                    <textarea v-model="form.note" placeholder="園へのご要望や事前に伝えておきたい配慮事項などがあればご記入ください（100文字以内）" maxlength="100"></textarea>
-                </div>
-
-                <button class="submit-btn" :disabled="submitting || !isFormValid" @click="submitReservation">
-                    {{ submitting ? '🔒 予約を確定させています...' : '✉️ この内容で予約を確定する' }}
-                </button>
+            <div class="form-group">
+                <label>4. 園児氏名（フルネーム）</label>
+                <input type="text" v-model="form.name" placeholder="例：ひかり 太郎">
             </div>
+
+            <div class="form-group">
+                <label>5. 参加形式</label>
+                <select v-model="form.meetingType">
+                    <option value="対面参加">対面参加</option>
+                    <option value="オンライン（Zoom）">オンライン（Zoom）</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>6. 保護者メールアドレス</label>
+                <input type="email" v-model="form.email" placeholder="例：parent@example.com">
+            </div>
+
+            <div class="form-group">
+                <label>7. 備考・伝達事項（任意）</label>
+                <textarea v-model="form.note" placeholder="園へのご要望や事前に伝えておきたい配慮事項などがあればご記入ください（100文字以内）" maxlength="100"></textarea>
+            </div>
+
+            <button class="submit-btn" :disabled="submitting || !isFormValid" @click="submitReservation">
+                {{ submitting ? '🔒 予約を確定させています...' : '✉️ この内容で予約を確定する' }}
+            </button>
         </div>
 
         <div v-else-if="pageStatus === 'success'" class="success-view">
@@ -140,6 +144,7 @@
             const classes = ref([]); const dates = ref([]); const slots = ref([]);
             const form = ref({ class: "", date: "", time: "", name: "", meetingType: "対面参加", email: "", note: "" });
 
+            // 必須入力のチェック
             const isFormValid = computed(() => {
                 return form.value.class && form.value.date && form.value.time && form.value.name.trim() && form.value.email.trim() && form.value.meetingType;
             });
@@ -186,7 +191,6 @@
                 if (!isFormValid.value || submitting.value) return;
                 submitting.value = true;
                 
-                // 💡 既存のシステムレイアウトを崩さないよう、GASの「形式」項目(meetingType)の後ろに「 (備考: 〇〇)」と合流させて送信するスマートなハック処理
                 let finalMeetingType = form.value.meetingType;
                 if (form.value.note.trim()) {
                     finalMeetingType += ` (備考: ${form.value.note.trim()})`;
