@@ -2,309 +2,388 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>予約管理画面</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>保育参加予約 システム管理画面</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        body { background-color: #f1f3f5; padding: 20px; display: none; }
-        .card { margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .badge-class { background-color: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; }
+        body { font-family: sans-serif; background: #f7fafc; margin: 0; padding: 20px; color: #2d3748; }
+        [v-cloak] { display: none !important; }
+        .container { max-width: 950px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { border-bottom: 2px solid #4a5568; padding-bottom: 10px; margin-top: 0; color: #1a202c; font-size: 1.8rem; }
+        h2 { font-size: 1.2rem; margin-top: 30px; color: #2b6cb0; border-left: 4px solid #2b6cb0; padding-left: 8px; }
+        .section { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 6px; margin-bottom: 20px; }
+        .flex-box { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+        input[type="text"], input[type="date"], input[type="time"], select, input[type="password"] { padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 0.95rem; }
+        button { padding: 8px 16px; background: #3182ce; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        button:hover { background: #2b6cb0; }
+        button.danger { background: #e53e3e; }
+        button.danger:hover { background: #c53030; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; table-layout: fixed; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; font-size: 0.9rem; word-wrap: break-word; }
+        th { background: #edf2f7; color: #4a5568; }
+        .loading { font-size: 1.2rem; text-align: center; padding: 50px; font-weight: bold; color: #4a5568; }
+        .login-box { max-width: 350px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        
+        /* 列の幅指定 */
+        .col-date { width: 11%; } .col-time { width: 11%; } .col-class { width: 12%; } 
+        .col-name { width: 13%; } .col-type { width: 12%; } .col-note { width: 22%; } 
+        .col-mail { width: 12%; } .col-op { width: 7%; }
 
-        /* 🖨️ 印刷用プロ仕様スタイル */
         @media print {
-            body { background-color: #fff; padding: 0; display: block !important; }
-            .container { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-            .col-md-5, #status, .btn, .btn-close, .alert, h2 { display: none !important; }
-            .col-md-7 { width: 100% !important; flex: 0 0 100% !important; max-width: 100% !important; }
-            .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
-            .card-title { font-size: 1.6rem; text-align: center; margin-bottom: 25px; font-weight: bold; }
-            .table { width: 100% !important; border-collapse: collapse; }
-            th, td { border: 1px solid #333 !important; padding: 10px !important; }
-            th:nth-child(3), td:nth-child(3) { display: none !important; }
-            
-            .text-muted { color: #000 !important; opacity: 1 !important; }
-            small { font-size: 0.9rem !important; color: #000 !important; display: inline-block !important; }
-            .print-no-email { display: none !important; }
+            body { background: white; padding: 0; color: black; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            h1, h2:not(.print-target-title), .section:not(.print-target-section), .login-box, button, input, select { display: none !important; }
+            th:last-child, td:last-child { display: none !important; }
+            .print-target-section { background: transparent !important; border: none !important; padding: 0 !important; max-height: none !important; overflow: visible !important; }
+            table { width: 100%; border: 1px solid #000; table-layout: fixed; }
+            th, td { border: 1px solid #000; padding: 8px; color: black !important; font-size: 0.85rem; }
+            th { background: #f0f0f0 !important; }
+            .col-note { width: 29%; } /* 操作列が消える分、備考欄を広く */
+            .col-op { display: none; }
         }
     </style>
 </head>
 <body>
-<div class="container mt-4" style="max-width: 950px;">
-    <h2 class="mb-4 text-center fw-bold">📅 予約管理システム</h2>
+<div id="app" v-cloak>
     
-    <div id="status" class="alert alert-info text-center d-none">データを処理中...</div>
+    <div v-if="loading" class="loading">
+        🔄 データを同期中。少々お待ちください...
+    </div>
 
-    <div class="row">
-        <div class="col-md-5">
-            <div class="card p-3 bg-light border-primary">
-                <h5 class="card-title fw-bold text-primary">👥 定員と締め切りの設定</h5>
-                <div class="input-group mb-3">
-                    <span class="input-group-text">予約上限数</span>
-                    <input type="number" id="maxCapacity" class="form-control text-center fw-bold" min="1" max="99" value="2">
-                    <span class="input-group-text">名 / 枠</span>
-                </div>
-                
-                <label class="fw-bold small mb-1 text-secondary">⏳ 受付締め切り方法の選択</label>
-                <div class="mb-2 p-2 bg-white rounded border">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="deadlineMode" id="modeDays" value="days" checked onchange="toggleDeadlineInput()">
-                        <label class="form-check-label small fw-bold" for="modeDays">予約日の〇日前</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="deadlineMode" id="modeAbsolute" value="absolute" onchange="toggleDeadlineInput()">
-                        <label class="form-check-label small fw-bold" for="modeAbsolute">指定日時で一括〆切</label>
-                    </div>
-                </div>
+    <div v-else-if="!isLoggedIn" class="login-box">
+        <h2 style="border:none; text-align:center; margin-top:0;">🔐 管理者ログイン</h2>
+        <p style="font-size:0.85rem; color:#718096; margin-bottom:20px;">設定された管理用パスワードを入力してください</p>
+        <input type="password" v-model="loginPassword" placeholder="パスワードを入力" style="width:80%; margin-bottom:15px;" @keyup.enter="checkLogin"><br>
+        <button @click="checkLogin" style="width:89%;">ログイン</button>
+    </div>
 
-                <div id="divDays" class="input-group mb-2">
-                    <span class="input-group-text">締め切り</span>
-                    <input type="number" id="deadlineDays" class="form-control text-center fw-bold" min="0" max="99" value="0">
-                    <span class="input-group-text">日前</span>
-                </div>
-                
-                <div id="divAbsolute" class="mb-2 d-none">
-                    <input type="datetime-local" id="deadlineValue" class="form-control fw-bold">
-                </div>
-
-                <button class="btn btn-sm btn-outline-secondary w-100 mb-2 fw-bold" onclick="clearDeadlineSettings()">🧹 締め切り設定をクリアする</button>
-                
-                <small class="text-muted mt-1 d-block" id="deadlineHelp">※0にすると当日まで受付。2にすると各予約日の2日前に自動で隠れます。</small>
+    <div v-else class="container">
+        <h1>🛠️ 保育参加システム 管理設定パネル</h1>
+        
+        <h2 class="print-target-title">📋 現在の予約データ一覧（面談日順）（{{ reserves.length }}件）</h2>
+        <div class="section print-target-section" style="overflow-x: auto; max-height: 450px;">
+            <div class="flex-box" v-if="reserves.length > 0">
+                <button class="danger" @click="clearMaster('予約データ')">⚠️ 予約データを一括クリア（全削除）</button>
+                <button @click="printPage" style="background: #4a5568;">🖨️ 予約一覧を印刷する / PDF保存</button>
             </div>
 
-            <div class="card p-3">
-                <h5 class="card-title fw-bold">🌿 クラスの設定</h5>
-                <div class="input-group mb-3">
-                    <input type="text" id="newClass" class="form-control" placeholder="例: カモミール">
-                    <button class="btn btn-primary" onclick="addClass()">追加</button>
-                </div>
-                <div id="classList" class="d-flex flex-wrap gap-2 mb-2"></div>
-            </div>
-
-            <div class="card p-3">
-                <h5 class="card-title fw-bold">📅 予約受付日の設定</h5>
-                <div class="mb-2">
-                    <label class="small text-muted">開始日</label>
-                    <input type="date" id="startDate" class="form-control">
-                </div>
-                <div class="mb-3">
-                    <label class="small text-muted">終了日</label>
-                    <input type="date" id="endDate" class="form-control">
-                </div>
-                <button class="btn btn-primary w-100 mb-2" onclick="addDateRange()">📅 期間をまとめて追加</button>
-                <button class="btn btn-sm btn-outline-danger w-100 mb-3" onclick="clearDates()">🧹 受付日をすべてクリア</button>
-                <ul id="dateList" class="list-group" style="max-height: 180px; overflow-y: auto;"></ul>
-            </div>
-
-            <div class="card p-3">
-                <h5 class="card-title fw-bold">🕒 時間帯の設定</h5>
-                <div class="input-group mb-2">
-                    <input type="text" id="newTime" class="form-control" placeholder="例: 13:00～14:00" oninput="convertToHalfWidth(this)">
-                    <button class="btn btn-primary" onclick="addTime()">追加</button>
-                </div>
-                <div class="form-text text-muted mb-2">※全角で入力しても自動的に半角（:, ~, 数字）に変換されます。</div>
-                <button class="btn btn-sm btn-outline-danger w-100 mb-3" onclick="clearTimes()">🧹 時間帯をすべてクリア</button>
-                <ul id="timeList" class="list-group"></ul>
-            </div>
-
-            <div class="card p-3 border-danger">
-                <h5 class="card-title fw-bold text-danger">🔒 管理者パスワードの変更</h5>
-                <div class="input-group mb-2">
-                    <input type="password" id="newPassword" class="form-control" placeholder="新しいパスワードを入力">
-                    <button class="btn btn-danger" onclick="changePassword()">変更</button>
-                </div>
-            </div>
-
-            <button class="btn btn-success w-100 py-2 fw-bold mb-4 shadow" onclick="saveSettings()">⚙️ 設定を保存する</button>
+            <p v-if="reserves.length === 0" style="color:#718096; margin:0;">現在、入っている予約はありません。</p>
+            <table v-else>
+                <thead>
+                    <tr>
+                        <th class="col-date">参加日</th>
+                        <th class="col-time">時間枠</th>
+                        <th class="col-class">クラス</th>
+                        <th class="col-name">園児氏名</th>
+                        <th class="col-type">形式</th>
+                        <th class="col-note">備考・伝達事項</th>
+                        <th class="col-mail">保護者メール</th>
+                        <th class="col-op">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="r in sortedReserves" :key="r.id">
+                        <td style="font-weight:bold; color:#2b6cb0;">{{ formatJapaneseDate(r.date) }}</td>
+                        <td style="font-weight:bold;">{{ r.time }}</td>
+                        <td>{{ r.class }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ parseMeetingData(r.meetingType).type }}</td>
+                        <td :style="{ color: parseMeetingData(r.meetingType).note ? '#2d3748' : '#a0aec0', fontStyle: parseMeetingData(r.meetingType).note ? 'normal' : 'italic' }">
+                            {{ parseMeetingData(r.meetingType).note || '-' }}
+                        </td>
+                        <td style="font-size:0.8rem; color:#718096;">{{ r.email }}</td>
+                        <td><button class="danger" style="padding:4px 8px; font-size:0.8rem;" @click="deleteRow('予約データ', r.id)">取消</button></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <div class="col-md-7">
-            <div class="card p-3">
-                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <h5 class="card-title fw-bold mb-0">👤 現在のご予約一覧</h5>
-                    <div>
-                        <button class="btn btn-sm btn-primary me-1 fw-bold" onclick="window.print()">🖨️ リストを印刷</button>
-                        <button class="btn btn-sm btn-outline-danger fw-bold" onclick="clearReservations()">🧹 予約を全消去</button>
+        <h2>⏳ 予約締め切りルールの設定</h2>
+        <div class="section">
+            <div class="flex-box">
+                <label><input type="radio" v-model="ruleForm.type" value="none"> 締め切りなし（いつでも受付）</label><br>
+                <label><input type="radio" v-model="ruleForm.type" value="fixedDate"> 特定の日時で一斉締め切り</label><br>
+                <label><input type="radio" v-model="ruleForm.type" value="daysAgo"> 各参加日の◯日前に自動締め切り</label><br>
+                <label><input type="radio" v-model="ruleForm.type" value="weekly"> 各参加日の1週間前に自動締め切り</label>
+            </div>
+            
+            <div class="flex-box" v-if="ruleForm.type === 'fixedDate'">
+                <span>一斉締め切り日:</span>
+                <input type="date" v-model="ruleForm.days">
+                <span>時刻:</span>
+                <input type="time" v-model="ruleForm.time">
+            </div>
+
+            <div class="flex-box" v-if="ruleForm.type === 'daysAgo'">
+                <span>参加日の</span>
+                <select v-model="ruleForm.days">
+                    <option value="1">1日前</option><option value="2">2日前</option><option value="3">3日前</option>
+                    <option value="4">4日前</option><option value="5">5日前</option><option value="6">6日前</option>
+                </select>
+                <span>の時刻:</span>
+                <input type="time" v-model="ruleForm.time">
+            </div>
+
+            <div class="flex-box" v-if="ruleForm.type === 'weekly'">
+                <span>参加日の 7日前 の時刻:</span>
+                <input type="time" v-model="ruleForm.time">
+            </div>
+
+            <div style="margin-top:15px;">
+                <button @click="saveDeadlineRule">⚙️ 締め切りルールを保存・適用する</button>
+            </div>
+        </div>
+
+        <h2>🏫 クラス設定</h2>
+        <div class="section">
+            <div class="flex-box">
+                <input type="text" v-model="classInput" placeholder="例：さくら組">
+                <button @click="addMaster('クラス設定', classInput)">追加</button>
+                <button class="danger" @click="clearMaster('クラス設定')">一括クリア</button>
+            </div>
+            <div class="flex-box">
+                <span v-for="c in classes" :key="c.id" style="background:#e2e8f0; padding:4px 10px; border-radius:20px; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+                    {{ c.name }} <span style="cursor:pointer; color:#e53e3e; font-weight:bold;" @click="deleteRow('クラス設定', c.id)">×</span>
+                </span>
+            </div>
+        </div>
+
+        <h2>📅 参加日設定</h2>
+        <div class="section">
+            <div class="flex-box" style="border-bottom:1px dashed #cbd5e0; padding-bottom:10px;">
+                <span style="font-weight:bold; font-size:0.9rem;">【範囲で一括追加】</span>
+                <input type="date" v-model="dateRange.start"> から
+                <input type="date" v-model="dateRange.end">
+                <button @click="addDateRange">日付を一括生成</button>
+            </div>
+            <div class="flex-box" style="margin-top:10px;">
+                <span style="font-weight:bold; font-size:0.9rem;">【個別追加】</span>
+                <input type="date" v-model="dateInput">
+                <button @click="addMaster('日付設定', dateInput)">追加</button>
+                <button class="danger" @click="clearMaster('日付設定')">一括クリア</button>
+            </div>
+            <div class="flex-box" style="margin-top:15px;">
+                <span v-for="d in sortedDates" :key="d.id" style="background:#e2e8f0; padding:4px 10px; border-radius:20px; font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+                    {{ formatJapaneseDate(d.date) }} <span style="cursor:pointer; color:#e53e3e; font-weight:bold;" @click="deleteRow('日付設定', d.id)">×</span>
+                </span>
+            </div>
+        </div>
+
+        <h2>🕒 時間枠設定（日付連動）</h2>
+        <div class="section">
+            <div class="flex-box" style="background:#ebf8ff; padding:10px; border-radius:6px; margin-bottom:15px;">
+                <span style="font-weight:bold; font-size:0.9rem; color:#2b6cb0;">対象期間:</span>
+                <input type="date" v-model="timeRange.start"> から
+                <input type="date" v-model="timeRange.end">
+                <span>に時間枠</span>
+                <input type="text" v-model="timeRange.value" placeholder="例：10:00〜10:20" style="width:130px;">
+                <button @click="addTimeRange">を指定期間に一括配置</button>
+                <button class="danger" @click="clearMaster('時間設定')">時間枠を一括クリア</button>
+            </div>
+
+            <div style="max-height: 300px; overflow-y: auto; background:white; border:1px solid #e2e8f0; padding:10px; border-radius:4px;">
+                <p v-if="times.length === 0" style="color:#718096; margin:0; font-size:0.9rem;">設定されている時間枠はありません。</p>
+                <div v-for="dStr in uniqueTimeDates" :key="dStr" style="margin-bottom:12px; border-bottom:1px solid #edf2f7; padding-bottom:8px;">
+                    <strong style="font-size:0.9rem; color:#4a5568;">📅 {{ formatJapaneseDate(dStr) }}</strong>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+                        <span v-for="t in getTimesByDate(dStr)" :key="t.id" style="background:#edf2f7; padding:2px 8px; border-radius:4px; font-size:0.8rem; display:inline-flex; align-items:center; gap:4px;">
+                            {{ t.time }} <span style="cursor:pointer; color:#e53e3e; font-weight:bold;" @click="deleteRow('時間設定', t.id)">×</span>
+                        </span>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>日時 / クラス</th>
-                                <th>ご予約者情報</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resTable"></tbody>
-                    </table>
-                </div>
+            </div>
+        </div>
+
+        <h2>🔐 管理画面ログイン パスワード変更</h2>
+        <div class="section">
+            <div class="flex-box">
+                <input type="password" v-model="newPasswordInput" placeholder="新しいパスワードを入力">
+                <button @click="updatePassword">パスワードを変更する</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // ⚠️【最重要】Google GASのURLをここに貼り付けてください！
-    const APP_URL = "https://script.google.com/macros/s/AKfycbzmw5WRsfz3_5v1HStsqrAGdFbkNzGbfxONK9GWdjxDt1z88X8iPGxS3h7LehEmJjY/exec";
+    const { createApp, ref, computed, onMounted } = Vue;
+    
+    // 🛠️ 【超重要】ここに最新のGASウェブアプリURLを正確に貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyrpiKHkvDT3rqdfPdmN3R2LWpJerrBmR7P7xwVo0RUVDA84nqCveUJuRKFtTLj-p8U/exec"; 
 
-    let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, deadlineMode: 'days', deadlineDays: 0, deadlineValue: '', reservations: [] };
+    createApp({
+        setup() {
+            const loading = ref(true);
+            const isLoggedIn = ref(false);
+            const loginPassword = ref("");
+            const adminPasswordSystem = ref("admin1234");
 
-    // 💡 入力された文字をリアルタイムに半角へ変換する関数
-    function convertToHalfWidth(input) {
-        let val = input.value;
-        // 全角数字を半角数字に変換
-        val = val.replace(/[０-９]/g, function(s) {
-            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-        });
-        // 全角コロン「：」を半角「:」に変換
-        val = val.replace(/：/g, ':');
-        // 全角の波線やダッシュを半角のハイフン「-」に統一（※ここを統一するとお客様画面と100%一致します）
-        val = val.replace(/[〜～〜ー]/g, '-');
-        // 空白（スペース）を消去
-        val = val.replace(/\s+/g, '');
-        
-        input.value = val;
-    }
+            const classes = ref([]); const dates = ref([]); const times = ref([]); const reserves = ref([]);
+            const classInput = ref(""); const dateInput = ref(""); const newPasswordInput = ref("");
+            const dateRange = ref({ start: "", end: "" });
+            const timeRange = ref({ start: "", end: "", value: "" });
+            const ruleForm = ref({ type: "none", days: "0", time: "20:00" });
 
-    function toggleDeadlineInput() {
-        const mode = document.querySelector('input[name="deadlineMode"]:checked').value;
-        const divDays = document.getElementById('divDays');
-        const divAbsolute = document.getElementById('divAbsolute');
-        const help = document.getElementById('deadlineHelp');
-        
-        if (mode === 'days') {
-            divDays.classList.remove('d-none'); divAbsolute.classList.add('d-none');
-            help.textContent = "※0にすると当日まで受付。2にすると各予約日の2日前に自動で隠れます。";
-        } else {
-            divDays.classList.add('d-none'); divAbsolute.classList.remove('d-none');
-            help.textContent = "※設定日時を過ぎると、お客様画面のすべての日付選択肢が同時に消滅します。";
-        }
-    }
+            const checkLogin = () => {
+                if (loginPassword.value === adminPasswordSystem.value) {
+                    const expireTime = Date.now() + 30 * 60 * 1000;
+                    localStorage.setItem("admin_login_expire", expireTime);
+                    isLoggedIn.value = true;
+                    loadSystemData();
+                } else {
+                    alert("❌ パスワードが違います。");
+                }
+            };
 
-    function clearDeadlineSettings() {
-        document.getElementById('modeDays').checked = true;
-        document.getElementById('deadlineDays').value = 0;
-        document.getElementById('deadlineValue').value = "";
-        toggleDeadlineInput();
-        alert("締め切り設定をリセットしました（当日まで受付）。\n反映するには一番下の「設定を保存する」ボタンを押してください。");
-    }
+            const checkAutoLogin = () => {
+                const expire = localStorage.getItem("admin_login_expire");
+                return (expire && Date.now() < Number(expire));
+            };
 
-    async function checkPassword() {
-        const SESSION_TIMEOUT = 5 * 60 * 1000;
-        const lastLogin = localStorage.getItem('admin_login_time');
-        const now = Date.now();
-        if (lastLogin && (now - parseInt(lastLogin, 10) < SESSION_TIMEOUT)) { document.body.style.display = "block"; loadData(); return; }
-        const userInput = prompt("管理者パスワードを入力してください：");
-        if (!userInput) { lockScreen(); return; }
-        document.body.style.display = "block"; showStatus("パスワードを認証中...");
-        try {
-            const res = await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'verifyPassword', password: userInput }) });
-            const result = await res.json();
-            if (result.status === "success") { localStorage.setItem('admin_login_time', Date.now().toString()); showStatus(""); loadData(); } else { alert("パスワードが正しくありません。"); lockScreen(); }
-        } catch(e) { alert("通信エラーが発生しました。"); lockScreen(); }
-    }
+            const normalizeToIsoDate = (rawStr) => {
+                if (!rawStr) return "";
+                let d = new Date(rawStr);
+                if (isNaN(d.getTime())) {
+                    let match = rawStr.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+                    if (match) return `${match[1]}-${String(match[2]).padStart(2,'0')}-${String(match[3]).padStart(2,'0')}`;
+                    return rawStr;
+                }
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            };
 
-    function lockScreen() { document.body.innerHTML = "<div class='container mt-5 text-center'><h3 class='text-danger'>🔒 アクセス権限がありません</h3></div>"; document.body.style.display = "block"; }
+            // 💡 形式データから「参加形式」と「備考欄」を賢く切り分けるロジック
+            const parseMeetingData = (rawText) => {
+                if (!rawText) return { type: '', note: '' };
+                const match = rawText.match(/(.*?)\s*\(備考:\s*(.*?)\)/);
+                if (match) {
+                    return { type: match[1], note: match[2] };
+                }
+                return { type: rawText, note: '' };
+            };
 
-    async function changePassword() {
-        const newPw = document.getElementById('newPassword').value.trim(); if (!newPw) { alert('入力してください'); return; } if (!confirm('変更しますか？')) return;
-        showStatus("パスワードを更新中...");
-        try {
-            const res = await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', newPassword: newPw }) });
-            const result = await res.json();
-            if (result.status === "success") { alert('変更しました！'); document.getElementById('newPassword').value = ""; localStorage.removeItem('admin_login_time'); } else { alert('失敗しました。'); }
-            showStatus("");
-        } catch(e) { showStatus("通信エラー", true); }
-    }
+            const loadSystemData = async () => {
+                loading.value = true;
+                try {
+                    const res = await fetch(GAS_URL); const json = await res.json();
+                    classes.value = json.classes || [];
+                    dates.value = (json.dates || []).map(d => ({ ...d, date: normalizeToIsoDate(d.date) }));
+                    times.value = (json.times || []).map(t => ({ ...t, date: normalizeToIsoDate(t.date) }));
+                    reserves.value = (json.reserves || []).map(r => ({ ...r, date: normalizeToIsoDate(r.date) }));
+                    
+                    if (json.adminPassword) adminPasswordSystem.value = json.adminPassword;
+                    if (json.deadlineRule) {
+                        ruleForm.value.type = json.deadlineRule.type;
+                        ruleForm.value.time = json.deadlineRule.time;
+                        let cleanDays = String(json.deadlineRule.days).trim();
+                        if (cleanDays.includes("1899/12/31") || cleanDays.includes("1899-12-31")) ruleForm.value.days = "1";
+                        else if (cleanDays.includes("1899/12/30") || cleanDays.includes("1899-12-30")) ruleForm.value.days = "0";
+                        else ruleForm.value.days = cleanDays.split(" ")[0];
+                    }
+                } catch (e) { alert("Googleとの通信に失敗しました。URLを確認してください。"); }
+                finally { loading.value = false; }
+            };
 
-    async function loadData() {
-        showStatus("データを読み込み中...");
-        try {
-            const res = await fetch(APP_URL + "?mode=admin");
-            serverData = await res.json();
-            document.getElementById('maxCapacity').value = serverData.maxCapacity || 2;
+            const postToGas = async (payload) => {
+                loading.value = true;
+                try {
+                    const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+                    const json = await res.json();
+                    if (json.status === "success") { await loadSystemData(); } 
+                    else { alert("エラーが発生しました: " + json.message); loading.value = false; }
+                } catch (e) { alert("通信エラーが発生しました。"); loading.value = false; }
+            };
+
+            const addMaster = (sheetName, val) => {
+                if (!val) return;
+                postToGas({ type: "addMaster", targetSheet: sheetName, value: val });
+                classInput.value = ""; dateInput.value = "";
+            };
+
+            const addDateRange = () => {
+                if (!dateRange.value.start || !dateRange.value.end) return;
+                postToGas({ type: "addDateRange", startDate: dateRange.value.start, endDate: dateRange.value.end });
+            };
+
+            const addTimeRange = () => {
+                if (!timeRange.value.start || !timeRange.value.end || !timeRange.value.value) return;
+                postToGas({ type: "addTimeRange", startDate: timeRange.value.start, endDate: timeRange.value.end, value: timeRange.value.value });
+                timeRange.value.value = "";
+            };
+
+            const deleteRow = (sheetName, id) => {
+                if (!confirm("本当にこの1行を削除してもよろしいですか？")) return;
+                postToGas({ type: "deleteRow", targetSheet: sheetName, id: id });
+            };
+
+            const clearMaster = (sheetName) => {
+                if (!confirm(`⚠️警告：【${sheetName}】のデータをすべて削除します。本当によろしいですか？`)) return;
+                postToGas({ type: "clearMaster", targetSheet: sheetName });
+            };
+
+            const saveDeadlineRule = () => {
+                postToGas({ type: "saveDeadlineRule", deadlineType: ruleForm.value.type, deadlineDays: ruleForm.value.days, deadlineTime: ruleForm.value.time });
+            };
+
+            const updatePassword = () => {
+                if (!newPasswordInput.value) return;
+                if (!confirm("パスワードを変更します。よろしいですか？")) return;
+                postToGas({ type: "updatePassword", newPassword: newPasswordInput.value });
+                alert("パスワードを変更しました。再度新しいパスワードでログインしてください。");
+                localStorage.removeItem("admin_login_expire");
+                isLoggedIn.value = false; loginPassword.value = ""; newPasswordInput.value = "";
+            };
+
+            const printPage = () => { window.print(); };
+
+            const formatJapaneseDate = (dStr) => {
+                if(!dStr) return '';
+                const clean = normalizeToIsoDate(dStr);
+                const parts = clean.split("-");
+                if (parts.length < 3) return dStr;
+                return `${Number(parts[1])}月${Number(parts[2])}日`;
+            };
+
+            const sortedDates = computed(() => [...dates.value].sort((a, b) => a.date.localeCompare(b.date)));
             
-            if (serverData.deadlineMode === "absolute") { document.getElementById('modeAbsolute').checked = true; } 
-            else { document.getElementById('modeDays').checked = true; }
-            document.getElementById('deadlineDays').value = serverData.deadlineDays || 0;
-            document.getElementById('deadlineValue').value = serverData.deadlineValue || "";
-            
-            toggleDeadlineInput(); renderSettings(); renderReservations(); showStatus("");
-        } catch(e) { showStatus("データの読み込みに失敗しました。", true); }
-    }
-
-    function formatDateDisplay(dStr) {
-        if (!dStr) return ""; if (typeof dStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dStr)) return dStr;
-        try { const d = new Date(dStr); if (isNaN(d.getTime())) return String(dStr); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; } catch (e) { return String(dStr); }
-    }
-
-    function renderSettings() {
-        const classDiv = document.getElementById('classList'); classDiv.innerHTML = serverData.classes.length === 0 ? '<span class="text-muted small">登録なし</span>' : '';
-        serverData.classes.forEach((c, idx) => { classDiv.innerHTML += `<span class="badge badge-class p-2 d-flex align-items-center gap-2">${c}クラス <button type="button" class="btn-close" style="font-size:0.6rem;" onclick="removeClass(${idx})"></button></span>`; });
-        const dateUl = document.getElementById('dateList'); dateUl.innerHTML = serverData.dates.length === 0 ? '<li class="list-group-item text-muted text-center">日付登録なし</li>' : '';
-        const cleanedDates = serverData.dates.map(d => formatDateDisplay(d)).filter(Boolean); const uniqueDates = [...new Set(cleanedDates)].sort();
-        uniqueDates.forEach((d) => { const originalIdx = serverData.dates.findIndex(orig => formatDateDisplay(orig) === d); dateUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${d}<button class="btn btn-sm btn-outline-danger" onclick="removeDate(${originalIdx})">削除</button></li>`; });
-        const timeUl = document.getElementById('timeList'); timeUl.innerHTML = serverData.times.length === 0 ? '<li class="list-group-item text-muted text-center">時間帯登録なし</li>' : '';
-        serverData.times.forEach((t, idx) => { timeUl.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${t}<button class="btn btn-sm btn-outline-danger" onclick="removeTime(${idx})">削除</button></li>`; });
-    }
-
-    function renderReservations() {
-        const tbody = document.getElementById('resTable'); tbody.innerHTML = serverData.reservations.length === 0 ? '<tr><td colspan="3" class="text-muted text-center py-4">現在ご予約はありません</td></tr>' : '';
-        serverData.reservations.forEach((r, i) => { 
-            tbody.innerHTML += `<tr><td><span class="fw-bold text-primary">${formatDateDisplay(r.date)}</span><br><small class="text-muted">${r.time}</small><br><span class="badge bg-secondary">${r.className}クラス</span></td><td><strong>${r.name} 様</strong><br><small class="text-muted">昼食: ${r.lunch}</small><br><small class="text-muted print-no-email" style="word-break: break-all;">${r.email || 'なし'}</small></td><td><button class="btn btn-danger btn-sm" onclick="deleteRes(${i})">削除</button></td></tr>`; 
-        });
-    }
-
-    function addDateRange() {
-        const startVal = document.getElementById('startDate').value; const endVal = document.getElementById('endDate').value; if (!startVal || !endVal) { alert('開始日と終了日を選択してください'); return; }
-        let d1 = new Date(startVal), d2 = new Date(endVal); if (d1 > d2) { alert('終了日は開始日より後にしてください'); return; }
-        let count = 0; while (d1 <= d2) { let dateStr = `${d1.getFullYear()}-${String(d1.getMonth() + 1).padStart(2, '0')}-${String(d1.getDate()).padStart(2, '0')}`; if (!serverData.dates.includes(dateStr)) { serverData.dates.push(dateStr); count++; } d1.setDate(d1.getDate() + 1); }
-        alert(`${count}日分追加しました！最後に保存ボタンで確定してください。`); renderSettings();
-    }
-
-    function clearDates() { if (confirm('すべての受付日を一括消去しますか？（保存するまで反映されません）')) { serverData.dates = []; renderSettings(); } }
-    function clearTimes() { if (confirm('すべての時間帯を一括消去しますか？（保存するまで反映されません）')) { serverData.times = []; renderSettings(); } }
-
-    async function clearReservations() {
-        if (!confirm('🚨【超重要警告】🚨\nすべての予約データを完全に消去しますか？この操作は取り消せません。')) return;
-        showStatus("予約をすべて消去中...");
-        try {
-            const res = await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'clearReservations' }) });
-            const result = await res.json(); if (result.status === "success") { alert('リセットしました。'); loadData(); } else { alert('消去に失敗しました。'); }
-        } catch(e) { showStatus("通信エラー", true); }
-    }
-
-    function addClass() { const name = document.getElementById('newClass').value.trim(); if(!name) return; if(serverData.classes.includes(name)) { alert('既に存在します'); return; } serverData.classes.push(name); document.getElementById('newClass').value = ""; renderSettings(); }
-    function removeClass(idx) { if(confirm('削除しますか？')) { serverData.classes.splice(idx, 1); renderSettings(); } }
-    function removeDate(idx) { if(idx !== -1) { serverData.dates.splice(idx, 1); renderSettings(); } }
-    function addTime() { const val = document.getElementById('newTime').value.trim(); if(!val || serverData.times.includes(val)) return; serverData.times.push(val); document.getElementById('newTime').value = ""; renderSettings(); }
-    function removeTime(idx) { serverData.times.splice(idx, 1); renderSettings(); }
-
-    async function saveSettings() {
-        showStatus("設定を保存中...");
-        const cap = parseInt(document.getElementById('maxCapacity').value, 10) || 2;
-        const mode = document.querySelector('input[name="deadlineMode"]:checked').value;
-        const deadDays = parseInt(document.getElementById('deadlineDays').value, 10) || 0;
-        const deadVal = document.getElementById('deadlineValue').value;
-        try {
-            await fetch(APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'updateSettings', dates: serverData.dates, times: serverData.times, classes: serverData.classes, maxCapacity: cap, deadlineMode: mode, deadlineDays: deadDays, deadlineValue: deadVal })
+            const sortedReserves = computed(() => {
+                return [...reserves.value].sort((a, b) => {
+                    let dComp = a.date.localeCompare(b.date);
+                    if (dComp !== 0) return dComp;
+                    return a.time.localeCompare(b.time);
+                });
             });
-            alert('すべての設定を保存しました！'); loadData();
-        } catch(e) { showStatus("保存に失敗しました。", true); }
-    }
 
-    async function deleteRes(i) {
-        if(confirm('この予約を削除しますか？')) {
-            showStatus("削除中..."); const target = serverData.reservations[i];
-            try { await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteReservation', date: formatDateDisplay(target.date), className: target.className, time: target.time, name: target.name }) }); loadData(); } catch(e) { showStatus("削除エラー", true); }
+            const uniqueTimeDates = computed(() => {
+                const set = new Set(times.value.map(t => t.date));
+                return Array.from(set).sort();
+            });
+            const getTimesByDate = (dStr) => times.value.filter(t => t.date === dStr).sort((a, b) => a.time.localeCompare(b.time));
+
+            onMounted(async () => {
+                try {
+                    const res = await fetch(GAS_URL); const json = await res.json();
+                    if (json.adminPassword) adminPasswordSystem.value = json.adminPassword;
+                    
+                    if (checkAutoLogin()) {
+                        isLoggedIn.value = true;
+                        classes.value = json.classes || [];
+                        dates.value = (json.dates || []).map(d => ({ ...d, date: normalizeToIsoDate(d.date) }));
+                        times.value = (json.times || []).map(t => ({ ...t, date: normalizeToIsoDate(t.date) }));
+                        reserves.value = (json.reserves || []).map(r => ({ ...r, date: normalizeToIsoDate(r.date) }));
+                        if (json.deadlineRule) {
+                            ruleForm.value.type = json.deadlineRule.type;
+                            ruleForm.value.time = json.deadlineRule.time;
+                            let cleanDays = String(json.deadlineRule.days).trim();
+                            if (cleanDays.includes("1899/12/31") || cleanDays.includes("1899-12-31")) ruleForm.value.days = "1";
+                            else if (cleanDays.includes("1899/12/30") || cleanDays.includes("1899-12-30")) ruleForm.value.days = "0";
+                            else ruleForm.value.days = cleanDays.split(" ")[0];
+                        }
+                    }
+                } catch(e) { console.error(e); }
+                finally { loading.value = false; }
+            });
+
+            return { loading, isLoggedIn, loginPassword, checkLogin, classes, dates, sortedDates, times, reserves, sortedReserves, classInput, dateInput, dateRange, timeRange, ruleForm, uniqueTimeDates, getTimesByDate, addMaster, addDateRange, addTimeRange, deleteRow, clearMaster, saveDeadlineRule, formatJapaneseDate, newPasswordInput, updatePassword, printPage, parseMeetingData };
         }
-    }
-
-    function showStatus(msg, isError = false) { const div = document.getElementById('status'); if(!msg) { div.classList.add('d-none'); return; } div.className = `alert ${isError ? 'alert-danger' : 'alert-info'} text-center`; div.textContent = msg; div.classList.remove('d-none'); }
-
-    checkPassword();
+    }).mount('#app');
 </script>
 </body>
 </html>
