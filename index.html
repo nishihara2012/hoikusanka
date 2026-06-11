@@ -149,7 +149,6 @@
             const classes = ref([]); const dates = ref([]); const slots = ref([]);
             const form = ref({ class: "", date: "", time: "", name: "", meetingType: "対面参加", email: "", note: "" });
 
-            // 全マスターデータ保持用
             let masterTimes = [];
             let masterReserves = [];
 
@@ -157,17 +156,27 @@
                 return form.value.class && form.value.date && form.value.time && form.value.name.trim() && form.value.email.trim() && form.value.meetingType;
             });
 
-            // 💡 日付から「月」と「日」だけをきれいに抜き出す最強の関数（表記ブレ吸収用）
+            // 💡 西暦（4桁）を安全に除外して「月-日」だけをきれいに取り出す高精度ロジック
             const extractMonthDay = (str) => {
                 if (!str) return "";
-                const s = String(str).replace(/\//g, "-");
-                const match = s.match(/(\d{1,2})[-月](\d{1,2})/);
-                if (match) {
-                    return `${Number(match[1])}-${Number(match[2])}`; // 例: "6-23"
+                let s = String(str).trim();
+                if (s.includes("T")) s = s.split("T")[0]; // ISO形式対策
+                s = s.replace(/\//g, "-");                 // スラッシュをハイフンに統一
+                
+                // 2026-06-23 のような4桁西暦から始まるパターン
+                let longMatch = s.match(/^(\d{4})[-年](\d{1,2})[-月](\d{1,2})/);
+                if (longMatch) {
+                    return `${Number(longMatch[2])}-${Number(longMatch[3])}`;
+                }
+                // 06-23 または 6月23日 のような西暦なしパターン
+                let shortMatch = s.match(/(\d{1,2})[-月](\d{1,2})/);
+                if (shortMatch) {
+                    return `${Number(shortMatch[1])}-${Number(shortMatch[2])}`;
                 }
                 return s;
             };
 
+            // 💡 日付を常に正しく「〇月〇日」にする関数
             const formatJapaneseDate = (dStr) => {
                 if(!dStr) return '';
                 const md = extractMonthDay(dStr);
@@ -180,25 +189,39 @@
 
             const onClassChange = () => { form.value.time = ""; };
 
-            // 💡 どんな日付形式のデータがスプレッドシートにあっても、月・日の一致だけで時間を引っ張ってくるロジック
             const fetchAvailableSlots = async () => {
                 if (!form.value.date) return;
                 loadingSlots.value = true;
                 form.value.time = "";
                 
                 try {
-                    const targetMD = extractMonthDay(form.value.date); // 選択された日の "6-23"
+                    const targetMD = extractMonthDay(form.value.date); // 例: "6-23"
                     
-                    // 1. 今回選んだ日付に合致する時間枠をマスターから抽出
+                    // 1. 今回選んだ日付（月日）に合致する時間設定を抽出
                     const matchedTimes = masterTimes.filter(t => extractMonthDay(t.date) === targetMD);
                     
-                    // 2. すでに埋まっている予約データから、今回選んだ日・クラスに該当するものをカウント
-                    const targetSlots = matchedTimes.map(t => {
+                    // 💡 【超重要】ボタンが複数出ないよう、時間（"16:00〜16:20"など）の重複をきれいに排除する
+                    const uniqueTimes = [];
+                    const seen = new Set();
+                    for (const t of matchedTimes) {
+                        const cleanTime = String(t.time).trim();
+                        if (!seen.has(cleanTime)) {
+                            seen.add(cleanTime);
+                            uniqueTimes.push(cleanTime);
+                        }
+                    }
+
+                    // 時間順に並び替え（必要に応じて）
+                    uniqueTimes.sort();
+
+                    // 2. 重複をなくした各時間について、すでに予約されている（埋まっている）か判定
+                    const targetSlots = uniqueTimes.map(timeStr => {
+                        // この日に、この時間で、すでに誰かが予約を確定させているかチェック
                         const isTaken = masterReserves.some(r => {
                             return extractMonthDay(r.date) === targetMD && 
-                                   String(r.time).trim() === String(t.time).trim();
+                                   String(r.time).trim() === timeStr;
                         });
-                        return { time: t.time, available: !isTaken };
+                        return { time: timeStr, available: !isTaken };
                     });
 
                     slots.value = targetSlots;
@@ -249,7 +272,6 @@
                     classes.value = json.classes || [];
                     dates.value = json.dates || [];
                     
-                    // 💡 初期読み込み時に、裏側の時間マスターと予約一覧をHTML側にがっつり保存しておく
                     masterTimes = json.times || [];
                     masterReserves = json.reserves || [];
                     
