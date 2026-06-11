@@ -94,7 +94,7 @@
                         各参加日の <input type="number" v-model="config.deadlineDays" style="width:50px; padding:4px;"> 日前に自動締め切り
                     </div>
                 </div>
-                <button @click="saveSystemConfig" style="margin-top:15px; width:100%;">⚙️ 締め切りルールを保存・適用する</button>
+                <button @click="saveDeadlineOnly" style="margin-top:15px; width:100%;">⚙️ 締め切りルールを保存・適用する</button>
             </div>
 
             <div class="card">
@@ -220,7 +220,6 @@
             const dateRange = ref({ start: "", end: "" });
             const timeBatch = ref({ startDate: "", endDate: "", slotText: "" });
             
-            // パスワード変更用の独立した入力欄
             const newPasswordInput = ref("");
             const config = ref({ deadlineType: "none", deadlineAbsolute: "", deadlineDays: 1, adminEmail: "", adminPassword: "" });
 
@@ -261,60 +260,63 @@
                 finally { loading.value = false; }
             };
 
-            const postAction = async (payload) => {
+            const postAction = async (payload, successMessage = "設定を反映しました。") => {
                 loading.value = true;
                 try {
-                    await fetch(GAS_URL, { method:"POST", body: JSON.stringify(payload) });
+                    const response = await fetch(GAS_URL, { method:"POST", body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error("Network response was not ok");
                     await fetchData();
-                } catch(e) { alert("設定反映に失敗しました。"); loading.value = false; }
+                    alert(successMessage);
+                } catch(e) { 
+                    alert("設定反映に失敗しました。GASのURLが正しいか、またはスプレッドシートの構造を確認してください。"); 
+                } finally {
+                    loading.value = false;
+                }
             };
 
-            const addClass = () => { if(!newClassName.value.trim()) return; postAction({ type:"addClass", name:newClassName.value.trim() }); newClassName.value=""; };
-            const deleteClass = (id) => { if(confirm("このクラスを削除しますか？")) postAction({ type:"deleteClass", id }); };
-            const clearClasses = () => { if(confirm("すべてのクラスを消去しますか？")) postAction({ type:"clearClasses" }); };
+            const addClass = () => { if(!newClassName.value.trim()) return; postAction({ type:"addClass", name:newClassName.value.trim() }, "クラスを追加しました。"); newClassName.value=""; };
+            const deleteClass = (id) => { if(confirm("このクラスを削除しますか？")) postAction({ type:"deleteClass", id }, "クラスを削除しました。"); };
+            const clearClasses = () => { if(confirm("すべてのクラスを消去しますか？")) postAction({ type:"clearClasses" }, "クラスを一括消去しました。"); };
 
-            const addSingleDate = () => { if(!newDateValue.value) return; postAction({ type:"addDate", date:newDateValue.value }); newDateValue.value=""; };
-            const deleteDate = (id) => { if(confirm("この日付を削除しますか？")) postAction({ type:"deleteDate", id }); };
-            const clearDates = () => { if(confirm("すべての日付を消去しますか？")) postAction({ type:"clearDates" }); };
+            const addSingleDate = () => { if(!newDateValue.value) return; postAction({ type:"addDate", date:newDateValue.value }, "日付を追加しました。"); newDateValue.value=""; };
+            const deleteDate = (id) => { if(confirm("この日付を削除しますか？")) postAction({ type:"deleteDate", id }, "日付を削除しました。"); };
+            const clearDates = () => { if(confirm("すべての日付を消去しますか？")) postAction({ type:"clearDates" }, "日付を一括消去しました。"); };
             
             const generateDateRange = () => {
                 if(!dateRange.value.start || !dateRange.value.end) return;
-                postAction({ type:"generateDateRange", start:dateRange.value.start, end:dateRange.value.end });
+                postAction({ type:"generateDateRange", start:dateRange.value.start, end:dateRange.value.end }, "指定範囲の日付を生成しました。");
             };
 
             const getTimesForDate = (dStr) => times.value.filter(t => String(t.date).trim() === String(dStr).trim());
             const applyTimeBatch = () => {
                 if(!timeBatch.value.startDate || !timeBatch.value.endDate || !timeBatch.value.slotText.trim()) return;
-                postAction({ type:"applyTimeBatch", start:timeBatch.value.startDate, end:timeBatch.value.endDate, time:timeBatch.value.slotText.trim() });
+                postAction({ type:"applyTimeBatch", start:timeBatch.value.startDate, end:timeBatch.value.endDate, time:timeBatch.value.slotText.trim() }, "時間枠を一括配置しました。");
                 timeBatch.value.slotText = "";
             };
-            const deleteTimeRow = (id) => { if(confirm("この時間枠を削除しますか？")) postAction({ type:"deleteTimeRow", id }); };
-            const clearAllTimes = () => { if(confirm("すべての時間枠設定を消去しますか？")) postAction({ type:"clearAllTimes" }); };
+            const deleteTimeRow = (id) => { if(confirm("この時間枠を削除しますか？")) postAction({ type:"deleteTimeRow", id }, "時間枠を削除しました。"); };
+            const clearAllTimes = () => { if(confirm("すべての時間枠設定を消去しますか？")) postAction({ type:"clearAllTimes" }, "時間枠を一括消去しました。"); };
 
-            const deleteReservationRow = (id) => { if(confirm("この予約を取り消しますか？")) postAction({ type:"deleteReservationRow", id }); };
-            const clearAllReservations = () => { if(confirm("【警告】すべての予約データを完全に全削除します。よろしいですか？")) postAction({ type:"clearAllReservations" }); };
+            const deleteReservationRow = (id) => { if(confirm("この予約を取り消しますか？")) postAction({ type:"deleteReservationRow", id }, "予約を取り消しました。"); };
+            const clearAllReservations = () => { if(confirm("【警告】すべての予約データを完全に全削除します。よろしいですか？")) postAction({ type:"clearAllReservations" }, "予約データを全削除しました。"); };
 
-            // 💡 システム設定の保存処理を安全に改良
+            // システム設定（パスワード・メール用）の保存
             const saveSystemConfig = () => { 
-                // コピーを作成
                 const sendConfig = { ...config.value };
-                
-                // パスワード変更欄に文字が入力されている場合のみ、パスワードを上書きする
                 if (newPasswordInput.value.trim()) {
                     sendConfig.adminPassword = newPasswordInput.value.trim();
                 }
-                
-                // GAS側にデータを送信
-                postAction({ type:"saveDeadline", config: sendConfig }); 
-                
-                // 保存が成功したらパスワード欄を空に戻す
+                postAction({ type:"saveDeadline", config: sendConfig }, "管理設定（パスワード・通知用アドレス）を保存しました。"); 
                 newPasswordInput.value = "";
-                alert("管理設定（パスワード/通知用アドレス等）を保存しました。");
+            };
+
+            // 締め切りルール単体の保存
+            const saveDeadlineOnly = () => {
+                postAction({ type:"saveDeadline", config: config.value }, "締め切りルールを保存しました。");
             };
             
             const printReservations = () => { window.print(); };
 
-            return { loading, isAuthorized, passwordInput, classes, dates, times, reserves, newClassName, newDateValue, dateRange, timeBatch, config, newPasswordInput, login, addClass, deleteClass, clearClasses, addSingleDate, deleteDate, clearDates, generateDateRange, getTimesForDate, applyTimeBatch, deleteTimeRow, clearAllTimes, deleteReservationRow, clearAllReservations, saveSystemConfig, printReservations, formatDisplayDate };
+            return { loading, isAuthorized, passwordInput, classes, dates, times, reserves, newClassName, newDateValue, dateRange, timeBatch, config, newPasswordInput, login, addClass, deleteClass, clearClasses, addSingleDate, deleteDate, clearDates, generateDateRange, getTimesForDate, applyTimeBatch, deleteTimeRow, clearAllTimes, deleteReservationRow, clearAllReservations, saveSystemConfig, saveDeadlineOnly, printReservations, formatDisplayDate };
         }
     }).mount('#app');
 </script>
