@@ -62,12 +62,12 @@
         <div class="column-left">
             
             <div class="card">
-                <h2>🔒 システム基本管理（パスワード変更等）</h2>
+                <h2>🔒 システム基本管理（パスワード・通知メール設定）</h2>
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <div>
                         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px; color:#4a5568;">現在のログインパスワード変更</label>
                         <div class="form-inline" style="margin-bottom:0;">
-                            <input type="text" v-model="config.adminPassword" placeholder="新しいパスバーワード" style="flex:1;">
+                            <input type="text" v-model="config.adminPassword" placeholder="新しいパスワード" style="width:100%;">
                         </div>
                     </div>
                     <div>
@@ -210,7 +210,7 @@
     const { createApp, ref, onMounted } = Vue;
     
     // 🔗 ここにお使いの最新のGASウェブアプリURLを貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbx-BIEOU51sCXEUt7gRD04zCA2Wf-PVGkF4r6aoHxB3n6ZCCf64KUjtpDmxTeqbAd_R/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx9LFxHD1yOI8jr5mjTr_XxIH31pSFnASTEJm4ewQqdhslOlaUh4Wbdr3TQCbmC-uSt/exec"; 
 
     createApp({
         setup() {
@@ -220,7 +220,6 @@
             const dateRange = ref({ start: "", end: "" });
             const timeBatch = ref({ startDate: "", endDate: "", slotText: "" });
             
-            // システム初期設定オブジェクト（adminPassword を紐付け）
             const config = ref({ deadlineType: "none", deadlineAbsolute: "", deadlineDays: 1, adminEmail: "", adminPassword: "admin" });
 
             const formatDisplayDate = (dStr) => {
@@ -254,7 +253,6 @@
                     times.value = json.times || [];
                     reserves.value = json.reserves || [];
                     if(json.config) {
-                        // サーバーから読み込んだデータを設定に反映（パスワードが未設定なら初期値 admin）
                         config.value = { ...config.value, ...json.config };
                     }
                 } catch(e) { alert("データ取得エラー"); }
@@ -294,11 +292,11 @@
             const deleteReservationRow = (id) => { if(confirm("この予約を取り消しますか？")) postAction({ type:"deleteReservationRow", id }); };
             const clearAllReservations = () => { if(confirm("【警告】すべての予約データを完全に全削除します。よろしいですか？")) postAction({ type:"clearAllReservations" }); };
 
-            // 💡 パスワード、管理者メール、締め切り等のシステム設定を保存
+            // システム設定の保存（パスワード・締め切りルール・メール共通）
             const saveSystemConfig = () => { 
                 if(!config.value.adminPassword.trim()) { alert("パスワードを空欄にすることはできません。"); return; }
                 postAction({ type:"saveDeadline", config: config.value }); 
-                alert("管理設定（パスワード/メール/締め切り等）を保存しました。");
+                alert("管理設定（パスワード/通知用アドレス等）を保存しました。");
             };
             
             const printReservations = () => { window.print(); };
