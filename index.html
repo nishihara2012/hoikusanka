@@ -60,9 +60,9 @@
 
             <div class="form-group">
                 <label>2. 参加希望日を選択してください</label>
-                <select v-model="form.date" @change="fetchAvailableSlots">
+                <select v-model="selectedDateIndex" @change="onDateChange">
                     <option value="">-- 日付を選択 --</option>
-                    <option v-for="d in dates" :key="d.id" :value="d.date">{{ formatJapaneseDate(d.date) }}</option>
+                    <option v-for="(d, idx) in dates" :key="d.id" :value="idx">{{ formatJapaneseDate(d.date) }}</option>
                 </select>
             </div>
 
@@ -71,22 +71,14 @@
                 <div v-if="!form.date" class="waiting-msg">
                     👆 参加希望日を選択してください。空き枠が表示されます。
                 </div>
-                <div v-else-if="loadingSlots" style="color:#718096; font-size:0.9rem; text-align:center; padding:10px;">
-                    🔄 空き枠を計算中...
-                </div>
-                <div v-else>
-                    <div v-if="slots.length === 0" class="waiting-msg" style="color:#e53e3e; background:#fff5f5; border-color:#fed7d7;">
-                        ⚠️ 選択された日付（{{ formatJapaneseDate(form.date) }}）には、設定された時間枠がありません。管理画面でこの日に枠を追加してください。
-                    </div>
-                    <div v-else class="grid-slots">
-                        <div v-for="s in slots" :key="s.time" 
-                             class="slot-btn" 
-                             :class="{ disabled: !s.available && form.time !== s.time, selected: form.time === s.time }"
-                             @click="selectSlot(s)">
-                            <strong>{{ s.time }}</strong>
-                            <span class="slot-num" v-if="s.available">受付中</span>
-                            <span class="slot-num" v-else style="color:#e53e3e;">満席</span>
-                        </div>
+                <div v-else class="grid-slots">
+                    <div v-for="s in slots" :key="s.time" 
+                         class="slot-btn" 
+                         :class="{ disabled: !s.available && form.time !== s.time, selected: form.time === s.time }"
+                         @click="selectSlot(s)">
+                        <strong>{{ s.time }}</strong>
+                        <span class="slot-num" v-if="s.available">受付中</span>
+                        <span class="slot-num" v-else style="color:#e53e3e;">満席</span>
                     </div>
                 </div>
             </div>
@@ -137,16 +129,15 @@
 <script>
     const { createApp, ref, computed, onMounted } = Vue;
     
-    // 🛠️ 【重要】ここにGASのウェブアプリURLを正確に貼り付けてください
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwuV8MxHJUI7kXHIJ8oBn_5L7I-oASZeN69lQS6VDHeDH3MEnSWoPKyovBtoBCPZl9h/exec"; 
 
     createApp({
         setup() {
             const pageStatus = ref("loading");
-            const loadingSlots = ref(false);
             const submitting = ref(false);
 
             const classes = ref([]); const dates = ref([]); const slots = ref([]);
+            const selectedDateIndex = ref("");
             const form = ref({ class: "", date: "", time: "", name: "", meetingType: "対面参加", email: "", note: "" });
 
             let masterTimes = [];
@@ -156,80 +147,66 @@
                 return form.value.class && form.value.date && form.value.time && form.value.name.trim() && form.value.email.trim() && form.value.meetingType;
             });
 
-            // 💡 西暦（4桁）を安全に除外して「月-日」だけをきれいに取り出す高精度ロジック
-            const extractMonthDay = (str) => {
-                if (!str) return "";
-                let s = String(str).trim();
-                if (s.includes("T")) s = s.split("T")[0]; // ISO形式対策
-                s = s.replace(/\//g, "-");                 // スラッシュをハイフンに統一
+            // GAS側のオリジナルの日付文字列キーを安全に保ちつつ、表示だけ「〇月〇日」にする
+            const formatJapaneseDate = (dateStr) => {
+                if (!dateStr) return "";
+                let s = String(dateStr).trim();
+                if (s.includes("T")) s = s.split("T")[0];
+                s = s.replace(/\//g, "-");
                 
-                // 2026-06-23 のような4桁西暦から始まるパターン
+                // 2026-06-23 のように4桁西暦から始まる場合
                 let longMatch = s.match(/^(\d{4})[-年](\d{1,2})[-月](\d{1,2})/);
                 if (longMatch) {
-                    return `${Number(longMatch[2])}-${Number(longMatch[3])}`;
+                    return `${Number(longMatch[2])}月${Number(longMatch[3])}日`;
                 }
-                // 06-23 または 6月23日 のような西暦なしパターン
-                let shortMatch = s.match(/(\d{1,2})[-月](\d{1,2})/);
+                // すでに 6-23 などの場合
+                let shortMatch = s.match(/^(\d{1,2})[-月](\d{1,2})/);
                 if (shortMatch) {
-                    return `${Number(shortMatch[1])}-${Number(shortMatch[2])}`;
+                    return `${Number(shortMatch[1])}月${Number(shortMatch[2])}日`;
                 }
-                return s;
-            };
-
-            // 💡 日付を常に正しく「〇月〇日」にする関数
-            const formatJapaneseDate = (dStr) => {
-                if(!dStr) return '';
-                const md = extractMonthDay(dStr);
-                const parts = md.split("-");
-                if (parts.length === 2) {
-                    return `${parts[0]}月${parts[1]}日`;
-                }
-                return dStr;
+                return dateStr;
             };
 
             const onClassChange = () => { form.value.time = ""; };
 
-            const fetchAvailableSlots = async () => {
-                if (!form.value.date) return;
-                loadingSlots.value = true;
+            const onDateChange = () => {
                 form.value.time = "";
-                
-                try {
-                    const targetMD = extractMonthDay(form.value.date); // 例: "6-23"
-                    
-                    // 1. 今回選んだ日付（月日）に合致する時間設定を抽出
-                    const matchedTimes = masterTimes.filter(t => extractMonthDay(t.date) === targetMD);
-                    
-                    // 💡 【超重要】ボタンが複数出ないよう、時間（"16:00〜16:20"など）の重複をきれいに排除する
-                    const uniqueTimes = [];
-                    const seen = new Set();
-                    for (const t of matchedTimes) {
-                        const cleanTime = String(t.time).trim();
-                        if (!seen.has(cleanTime)) {
-                            seen.add(cleanTime);
-                            uniqueTimes.push(cleanTime);
-                        }
-                    }
-
-                    // 時間順に並び替え（必要に応じて）
-                    uniqueTimes.sort();
-
-                    // 2. 重複をなくした各時間について、すでに予約されている（埋まっている）か判定
-                    const targetSlots = uniqueTimes.map(timeStr => {
-                        // この日に、この時間で、すでに誰かが予約を確定させているかチェック
-                        const isTaken = masterReserves.some(r => {
-                            return extractMonthDay(r.date) === targetMD && 
-                                   String(r.time).trim() === timeStr;
-                        });
-                        return { time: timeStr, available: !isTaken };
-                    });
-
-                    slots.value = targetSlots;
-                } catch(e) { 
-                    alert("空き状況の取得に失敗しました。"); 
-                } finally { 
-                    loadingSlots.value = false; 
+                if (selectedDateIndex.value === "") {
+                    form.value.date = "";
+                    slots.value = [];
+                    return;
                 }
+                // GASから渡ってきた「オリジナルの日付文字列（西暦付き等）」をそのままセット
+                form.value.date = dates.value[selectedDateIndex.value].date;
+                buildSlots();
+            };
+
+            const buildSlots = () => {
+                if (!form.value.date) return;
+                
+                // 同一の日付文字列を持つ時間枠設定を抽出
+                const matchedTimes = masterTimes.filter(t => String(t.date).trim() === String(form.value.date).trim());
+                
+                // 時間枠の重複を排除して1つにまとめる
+                const uniqueTimeStrings = [];
+                const seen = new Set();
+                for (const t of matchedTimes) {
+                    const tStr = String(t.time).trim();
+                    if (!seen.has(tStr)) {
+                        seen.add(tStr);
+                        uniqueTimeStrings.push(tStr);
+                    }
+                }
+                uniqueTimeStrings.sort();
+
+                // 予約状況をチェックしてボタン化
+                slots.value = uniqueTimeStrings.map(tStr => {
+                    const isTaken = masterReserves.some(r => 
+                        String(r.date).trim() === String(form.value.date).trim() && 
+                        String(r.time).trim() === tStr
+                    );
+                    return { time: tStr, available: !isTaken };
+                });
             };
 
             const selectSlot = (s) => {
@@ -246,6 +223,7 @@
                     finalMeetingType += ` (備考: ${form.value.note.trim()})`;
                 }
 
+                // GASが期待する100%正しいオリジナル形式でカチッと送信
                 const payload = {
                     type: "reserve",
                     class: form.value.class,
@@ -271,7 +249,6 @@
                     
                     classes.value = json.classes || [];
                     dates.value = json.dates || [];
-                    
                     masterTimes = json.times || [];
                     masterReserves = json.reserves || [];
                     
@@ -279,7 +256,7 @@
                 } catch(e) { pageStatus.value = "closed"; }
             });
 
-            return { pageStatus, loadingSlots, submitting, classes, dates, slots, form, isFormValid, onClassChange, fetchAvailableSlots, selectSlot, submitReservation, formatJapaneseDate };
+            return { pageStatus, submitting, classes, dates, slots, form, selectedDateIndex, isFormValid, onClassChange, onDateChange, selectSlot, submitReservation, formatJapaneseDate };
         }
     }).mount('#app');
 </script>
