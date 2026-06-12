@@ -150,20 +150,20 @@
 </div>
 
 <script>
-    const APP_URL = "https://script.google.com/macros/s/AKfycbyS0-YjztyRMLXh8h9DxzVJUxbCnuH4vhIQxqIuyiKUW90KZ9AcqtPFORqojB0QKjv8/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbx6RJo8KaIgR2x3vCSK8tbdkiQn_XmvYuR7l1C9g3798hovQNZW0wZi0XJcQKB8YCWP/exec";
 
     let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, deadlineMode: 'days', deadlineDays: 0, deadlineValue: '', adminEmail: '', adminPassword: 'admin123', reservations: [] };
 
-    // 👁️ パスワードの表示・非表示を切り替える処理
+    // 👁️ パスワードの切り替え処理
     function togglePasswordVisibility(inputId, iconId) {
         const input = document.getElementById(inputId);
         const icon = document.getElementById(iconId);
         if (input.type === 'password') {
             input.type = 'text';
-            icon.className = 'bi bi-eye'; // 目が開いたマーク
+            icon.className = 'bi bi-eye';
         } else {
             input.type = 'password';
-            icon.className = 'bi bi-eye-slash'; // 目に斜線が入ったマーク（伏せ字用）
+            icon.className = 'bi bi-eye-slash';
         }
     }
 
@@ -214,7 +214,8 @@
     async function loadData() {
         showStatus("データを読み込み中...");
         try {
-            const res = await fetch(APP_URL + "?mode=admin&t=" + Date.now());
+            // mode=admin_fetch に統一して確実にGASからデータを引っ張る
+            const res = await fetch(APP_URL + "?mode=admin_fetch&t=" + Date.now());
             serverData = await res.json();
             
             document.getElementById('maxCapacity').value = serverData.maxCapacity || 2;
@@ -267,7 +268,7 @@
     function renderReservations() {
         const tbody = document.getElementById('resTable'); tbody.innerHTML = serverData.reservations.length === 0 ? '<tr><td colspan="3" class="text-muted text-center py-4">現在ご予約はありません</td></tr>' : '';
         serverData.reservations.forEach((r, i) => { 
-            tbody.innerHTML += `<tr><td><span class="fw-bold text-primary">${formatDateDisplay(r.date)}</span><br><small class="text-muted">${r.time}</small><br><span class="badge bg-secondary">${r.className}クラス</span></td><td><strong>${r.name} 様</strong><br><small class="text-muted">昼食: ${r.lunch}</small><br><small class="text-muted style="word-break: break-all;">${r.email || 'なし'}</small></td><td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteRes(${i})">削除</button></td></tr>`; 
+            tbody.innerHTML += `<tr><td><span class="fw-bold text-primary">${formatDateDisplay(r.date)}</span><br><small class="text-muted">${r.time}</small><br><span class="badge bg-secondary">${r.className}クラス</span></td><td><strong>${r.name} 様</strong><br><small class="text-muted">昼食: ${r.lunch}</small><br><small class="text-muted" style="word-break: break-all;">${r.email || 'なし'}</small></td><td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteRes(${i})">削除</button></td></tr>`; 
         });
     }
 
@@ -314,8 +315,9 @@
 
     function showStatus(msg) { const div = document.getElementById('status'); if(!msg) { div.classList.add('d-none'); return; } div.textContent = msg; div.classList.remove('d-none'); }
 
+    // 初期起動時に確実に一度データをロードしておく
     window.addEventListener('DOMContentLoaded', async () => {
-        try { const res = await fetch(APP_URL + "?mode=admin&t=" + Date.now()); serverData = await res.json(); } catch(e){}
+        try { const res = await fetch(APP_URL + "?mode=admin_fetch&t=" + Date.now()); serverData = await res.json(); } catch(e){}
     });
 </script>
 </body>

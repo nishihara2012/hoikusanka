@@ -65,14 +65,15 @@
 </div>
 
 <script>
-    const APP_URL = "https://script.google.com/macros/s/AKfycbyS0-YjztyRMLXh8h9DxzVJUxbCnuH4vhIQxqIuyiKUW90KZ9AcqtPFORqojB0QKjv8/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbx6RJo8KaIgR2x3vCSK8tbdkiQn_XmvYuR7l1C9g3798hovQNZW0wZi0XJcQKB8YCWP/exec";
 
     let serverData = { dates: [], times: [], classes: [], maxCapacity: 2 };
 
     async function loadData() {
         showStatus("データを読み込み中...");
         try {
-            const res = await fetch(APP_URL + "?mode=user&t=" + Date.now());
+            // mode=user_fetch に統一して確実にデータを要求する
+            const res = await fetch(APP_URL + "?mode=user_fetch&t=" + Date.now());
             serverData = await res.json();
             populateSelect('date', serverData.dates, true);
             populateSelect('className', serverData.classes);
@@ -81,14 +82,13 @@
         } catch(e) { showStatus(""); }
     }
 
-    // ★時間帯を選んだら昼食エリアを出す判定
     function handleTimeChange() {
         const timeSelect = document.getElementById('time');
         const lunchArea = document.getElementById('lunchArea');
         if (timeSelect.value !== "") {
-            lunchArea.classList.remove('d-none'); // 選択されたら表示
+            lunchArea.classList.remove('d-none');
         } else {
-            lunchArea.classList.add('d-none');    // 未選択なら隠す
+            lunchArea.classList.add('d-none');
         }
     }
 
@@ -132,7 +132,7 @@
             await fetch(APP_URL, { method: 'POST', body: JSON.stringify(payload) });
             alert('予約が完了しました！');
             document.getElementById('bookingForm').reset();
-            document.getElementById('lunchArea').classList.add('d-none'); // 昼食欄を隠す
+            document.getElementById('lunchArea').classList.add('d-none');
             showStatus("");
         } catch(e) {
             alert('送信処理を行いました。');
