@@ -7,7 +7,7 @@
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; }
         .main-layout { display: flex; gap: 25px; max-width: 1400px; margin: 0 auto; }
-        .left-col { flex: 1; min-width: 450px; }
+        .left-col { flex: 1; min-width: 480px; max-height: 90vh; overflow-y: auto; padding-right: 10px; }
         .right-col { flex: 1.2; min-width: 550px; }
         .container { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
         h2, h3 { color: #2c3e50; border-bottom: 2px solid #34495e; padding-bottom: 6px; margin-top: 0; }
@@ -25,7 +25,7 @@
         #adminContent { display: none; }
         .section-block { background: #fafafa; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .flex-input { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-        .item-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .item-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 100px; overflow-y: auto; padding: 4px; background: #fff; border: 1px solid #edf2f7; border-radius: 6px; }
         .item-tag { background: #e2e8f0; padding: 4px 10px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; }
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
         .b-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
@@ -55,6 +55,7 @@
 </div>
 
 <div id="adminContent" class="main-layout">
+    
     <div class="left-col no-print">
         <div class="header-flex">
             <h2>保育参加 設定画面</h2>
@@ -67,32 +68,34 @@
                 <label>① ○日前締切設定</label>
                 <div class="flex-input">
                     希望日の <input type="number" id="deadlineDays" style="width: 70px;" min="0"> 日前に自動締切
-                    <button class="btn btn-sm" onclick="saveDeadlineConfig('days')">保存</button>
+                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">保存</button>
                 </div>
             </div>
             <div class="form-group">
                 <label>② 日時指定で一括締め切り</label>
                 <div class="flex-input">
                     <input type="datetime-local" id="forceDeadlineDatetime" style="flex:1;">
-                    <button class="btn btn-sm" onclick="saveDeadlineConfig('datetime')">一括締切を適用</button>
+                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">一括締切を適用</button>
                 </div>
             </div>
         </div>
 
-        <div class="section-block">
-            <h3>管理者設定</h3>
-            <div class="form-group"><label>通知用メールアドレス</label>
-                <div class="flex-input"><input type="email" id="adminEmail" style="flex:1"><button class="btn btn-sm" onclick="saveAccount('email')">更新</button></div>
+        <div class="section-block" style="border-left: 4px solid #3182ce;">
+            <div class="header-flex"><h3>📅 希望日の選択肢 設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">一括削除</button></div>
+            <div class="flex-input">
+                <input type="date" id="newMasterDate" style="flex:1;">
+                <button class="btn btn-sm" onclick="addMasterDate()">選択肢に追加</button>
             </div>
-            <div class="form-group"><label>新しい管理パスワード</label>
-                <div class="flex-input"><input type="password" id="adminPassword" style="flex:1" placeholder="変更時のみ入力"><button class="btn btn-sm" onclick="saveAccount('pw')">更新</button></div>
-            </div>
+            <div class="item-list" id="listAvailableDates"></div>
         </div>
 
-        <div class="section-block">
-            <div class="header-flex"><h3>クラス設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('classes')">一括削除</button></div>
-            <div class="flex-input"><input type="text" id="newClass" placeholder="例：ひよこ組" style="flex:1"><button class="btn btn-sm" onclick="addMaster('classes', 'newClass')">追加</button></div>
-            <div class="item-list" id="listClasses"></div>
+        <div class="section-block" style="border-left: 4px solid #319795;">
+            <div class="header-flex"><h3>🕒 時間帯の選択肢 設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableTimes')">一括削除</button></div>
+            <div class="flex-input">
+                <input type="text" id="newMasterTime" placeholder="例：09:30-11:30" style="flex:1;">
+                <button class="btn btn-sm" onclick="addMaster('availableTimes', 'newMasterTime')">選択肢に追加</button>
+            </div>
+            <div class="item-list" id="listAvailableTimes"></div>
         </div>
 
         <div class="section-block">
@@ -101,28 +104,42 @@
             <div class="item-list" id="listLunchTimes"></div>
         </div>
 
-        <div class="section-block" style="background:#f7fafc; border: 1px solid #e2e8f0;">
-            <h3>📅 希望日・時間枠・定員の設定</h3>
-            <div style="background:#fff; padding:12px; border:1px solid #cbd5e0; border-radius:6px; margin-bottom:12px;">
-                <label>【ステップ1】登録モード選択</label>
-                <div style="font-size:13px; margin-bottom:10px;">
-                    <label style="display:inline; font-weight:normal; margin-right:15px;"><input type="radio" name="dateMode" value="single" checked onclick="toggleDateMode()"> 1日ずつ</label>
-                    <label style="display:inline; font-weight:normal;"><input type="radio" name="dateMode" value="range" onclick="toggleDateMode()"> 期間(○日～○日)</label>
+        <div class="section-block">
+            <div class="header-flex"><h3>クラス設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('classes')">一括削除</button></div>
+            <div class="flex-input"><input type="text" id="newClass" placeholder="例：ひよこ組" style="flex:1"><button class="btn btn-sm" onclick="addMaster('classes', 'newClass')">追加</button></div>
+            <div class="item-list" id="listClasses"></div>
+        </div>
+
+        <div class="section-block" style="background:#f7fafc; border: 1px solid #cbd5e0;">
+            <h3>⚙️ 予約枠（定員数）の作成・連動</h3>
+            <div style="background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:6px;">
+                <div class="form-group">
+                    <label>① 上記の登録から希望日を選択</label>
+                    <select id="schSelectDate" style="width:100%;"></select>
                 </div>
-                <div id="singleDateInput" class="flex-input"><input type="date" id="schDate" style="flex:1;"></div>
-                <div id="rangeDateInput" class="flex-input" style="display:none;"><input type="date" id="schDateStart"><span>～</span><input type="date" id="schDateEnd"></div>
+                <div class="form-group">
+                    <label>② 上記の登録から時間帯を選択</label>
+                    <select id="schSelectTime" style="width:100%;"></select>
+                </div>
+                <div class="form-group">
+                    <label>③ この枠の定員（予約枠数）</label>
+                    <input type="number" id="schCapacity" value="2" style="width:70px;" min="1"> 名
+                </div>
+                <button class="btn btn-success" style="width:100%; margin-top:5px;" onclick="addSchedule()">この内容で受付枠を作成（その場で保存）</button>
             </div>
 
-            <div style="background:#fff; padding:12px; border:1px solid #cbd5e0; border-radius:6px;">
-                <label>【ステップ2】時間帯と定員（予約枠）</label>
-                <div class="flex-input">
-                    時間:<input type="text" id="schTime" placeholder="09:30-11:30" style="flex:1;">
-                    枠数:<input type="number" id="schCapacity" value="2" style="width:55px;" min="1">
-                </div>
-                <button class="btn btn-success" style="width:100%; margin-top:5px;" onclick="addSchedule()">この内容でその場で枠を追加登録</button>
+            <h4 style="margin: 15px 0 5px 0; color:#4a5568;">現在受付中の日時・枠数リスト</h4>
+            <div id="scheduleContainer" style="max-height:200px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="section-block">
+            <h3>管理者アカウント設定</h3>
+            <div class="form-group"><label>通知用メールアドレス</label>
+                <div class="flex-input"><input type="email" id="adminEmail" style="flex:1"><button class="btn btn-sm" onclick="saveAccount('email')">更新</button></div>
             </div>
-            <h4 style="margin: 15px 0 5px 0; color:#4a5568;">登録中の時間枠リスト</h4>
-            <div id="scheduleContainer" style="max-height:250px; overflow-y:auto;"></div>
+            <div class="form-group"><label>新しい管理パスワード</label>
+                <div class="flex-input"><input type="password" id="adminPassword" style="flex:1" placeholder="変更時のみ入力"><button class="btn btn-sm" onclick="saveAccount('pw')">更新</button></div>
+            </div>
         </div>
     </div>
 
@@ -159,24 +176,21 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxKHqXzxBraJVERYo7js2JoQd4TnKOl4-RHRXJySelNubgmtwruXyTC-S3ZNHhmlWay/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxae1DhwiOQZbiQvinpjqprNN5-qsHw9fRfhK_R5Jboog-_h2-IiifdGjEvMQDqhNMr/exec";
     let currentToken = "";
-    let state = { classes: [], lunchTimes: [], schedules: [], bookings: [] };
+    let state = { classes: [], lunchTimes: [], availableDates: [], availableTimes: [], schedules: [], bookings: [] };
 
-    // 💡 5分間パスワード不要スキップの判定ロジック
     window.addEventListener('DOMContentLoaded', () => {
         const cachedPw = sessionStorage.getItem('admin_pw');
         const cacheTime = sessionStorage.getItem('admin_login_time');
-        
         if (cachedPw && cacheTime) {
             const diffMin = (new Date().getTime() - Number(cacheTime)) / 1000 / 60;
-            if (diffMin < 5) { // 5分以内なら自動ログインを試行
+            if (diffMin < 5) {
                 document.getElementById('loginLoading').style.display = 'block';
                 login(cachedPw);
                 return;
             }
         }
-        // キャッシュがない、または5分以上過ぎていたら通常通りログイン画面を出す
         sessionStorage.clear();
     });
 
@@ -187,8 +201,6 @@
             const data = await response.json();
             if (data.status === 'success') {
                 currentToken = pw;
-                
-                // 💡 ログイン成功時にパスワードと現在時刻を5分間キャッシュ保存
                 sessionStorage.setItem('admin_pw', pw);
                 sessionStorage.setItem('admin_login_time', new Date().getTime().toString());
 
@@ -201,28 +213,27 @@
                 
                 state.classes = data.config.classes;
                 state.lunchTimes = data.config.lunch_times;
+                state.availableDates = data.config.available_dates;
+                state.availableTimes = data.config.available_times;
                 state.schedules = data.config.schedules;
                 state.bookings = data.config.bookings;
                 
                 renderAll();
-            } else { 
-                alert('パスワードが正しくありません。'); 
-                logout();
-            }
+            } else { alert('パスワードが正しくありません。'); logout(); }
         } catch (e) { alert('通信エラーが発生しました。'); }
         document.getElementById('loginLoading').style.display = 'none';
     }
 
-    function logout() {
-        sessionStorage.clear();
-        location.reload();
-    }
+    function logout() { sessionStorage.clear(); location.reload(); }
 
     function renderAll() {
         renderTags('classes', 'listClasses');
         renderTags('lunchTimes', 'listLunchTimes');
+        renderTags('availableDates', 'listAvailableDates');
+        renderTags('availableTimes', 'listAvailableTimes');
         renderSchedules();
         renderBookings();
+        updateScheduleSelects();
     }
 
     function renderTags(key, elementId) {
@@ -236,25 +247,30 @@
         });
     }
 
+    function updateScheduleSelects() {
+        const dSelect = document.getElementById('schSelectDate');
+        const tSelect = document.getElementById('schSelectTime');
+        dSelect.innerHTML = ''; tSelect.innerHTML = '';
+        state.availableDates.forEach(d => dSelect.add(new Option(d, d)));
+        state.availableTimes.forEach(t => tSelect.add(new Option(t, t)));
+    }
+
     function renderSchedules() {
         const container = document.getElementById('scheduleContainer');
         container.innerHTML = '';
-        if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">登録された時間枠はありません。</div>'; return; }
+        if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">作成された受付枠はありません。</div>'; return; }
         state.schedules.sort((a,b) => (a.date + a.time_slot).localeCompare(b.date + b.time_slot));
         state.schedules.forEach(s => {
             const card = document.createElement('div');
             card.className = 'sch-card header-flex';
-            card.innerHTML = `
-                <div><strong>${s.date}</strong> | ${s.time_slot} (枠:${s.capacity}名 / 予約:${s.reserved_count}名)</div>
-                <button class="btn btn-danger btn-sm" onclick="deleteScheduleFromServer('${s.id}')">削除</button>
-            `;
+            card.innerHTML = `<div><strong>${s.date}</strong> | ${s.time_slot} (枠:${s.capacity}名 / 予約:${s.reserved_count}名)</div>
+                <button class="btn btn-danger btn-sm" onclick="deleteScheduleFromServer('${s.id}')">削除</button>`;
             container.appendChild(card);
         });
     }
 
     function renderBookings() {
-        const tbody = document.getElementById('bookingTableBody');
-        tbody.innerHTML = '';
+        const tbody = document.getElementById('bookingTableBody'); tbody.innerHTML = '';
         if(state.bookings.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>'; return; }
         state.bookings.forEach(b => {
             const row = document.createElement('tr');
@@ -264,10 +280,13 @@
         });
     }
 
-    function toggleDateMode() {
-        const mode = document.querySelector('input[name="dateMode"]:checked').value;
-        document.getElementById('singleDateInput').style.display = (mode === 'single') ? 'flex' : 'none';
-        document.getElementById('rangeDateInput').style.display = (mode === 'range') ? 'flex' : 'none';
+    // 日付マスター追加専用処理 (yyyy/MM/ddに整形)
+    async function addMasterDate() {
+        const input = document.getElementById('newMasterDate'); if(!input.value) return;
+        const formattedDate = input.value.replace(/-/g, '/');
+        state.availableDates.push(formattedDate);
+        state.availableDates.sort();
+        if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; renderAll(); }
     }
 
     async function addMaster(key, inputId) {
@@ -275,59 +294,44 @@
         state[key].push(val);
         if(await sendAction("updateMaster", { key: key, list: state[key] })) { input.value = ''; renderAll(); }
     }
+
     async function deleteMaster(key, index) {
+        if(!confirm('この選択肢を削除しますか？（作成済みのスケジュール枠自体は消えません）')) return;
         state[key].splice(index, 1);
         await sendAction("updateMaster", { key: key, list: state[key] }); renderAll();
     }
+
     async function clearMaster(key) {
-        if(!confirm('本当に一括削除しますか？')) return;
+        if(!confirm('本当にこの選択肢を一括削除しますか？')) return;
         state[key] = [];
         await sendAction("updateMaster", { key: key, list: state[key] }); renderAll();
     }
-    async function saveDeadlineConfig(type) {
-        const payload = {
-            deadlineDays: document.getElementById('deadlineDays').value,
-            forceDeadlineDatetime: document.getElementById('forceDeadlineDatetime').value
-        };
+
+    async function saveDeadlineConfig() {
+        const payload = { deadlineDays: document.getElementById('deadlineDays').value, forceDeadlineDatetime: document.getElementById('forceDeadlineDatetime').value };
         if(await sendAction("saveDeadline", payload)) alert('締め切り設定を保存・適用しました。');
     }
+
     async function saveAccount(type) {
         const payload = { email: document.getElementById('adminEmail').value, pw: type === 'pw' ? document.getElementById('adminPassword').value : "" };
         if(type === 'pw' && !payload.pw) return alert('パスワードを入力してください');
-        if(await sendAction("saveAccount", payload)) { 
-            alert('アカウント情報を更新しました。'); 
-            if(type === 'pw') { sessionStorage.clear(); location.reload(); }
-        }
+        if(await sendAction("saveAccount", payload)) { alert('アカウント情報を更新しました。'); if(type === 'pw') { sessionStorage.clear(); location.reload(); } }
     }
 
     async function addSchedule() {
-        const mode = document.querySelector('input[name="dateMode"]:checked').value;
-        const time = document.getElementById('schTime').value.trim();
+        const date = document.getElementById('schSelectDate').value;
+        const time = document.getElementById('schSelectTime').value;
         const capacity = document.getElementById('schCapacity').value;
-        if(!time) return alert('時間帯を入力してください。');
+        if(!date || !time) return alert('希望日と時間帯を選択してください。先に上のマスター設定で選択肢を登録してください。');
 
-        let dates = [];
-        if(mode === 'single') {
-            const d = document.getElementById('schDate').value; if(!d) return alert('日付を選択してください');
-            dates.push(d.replace(/-/g, '/'));
-        } else {
-            const startStr = document.getElementById('schDateStart').value;
-            const endStr = document.getElementById('schDateEnd').value;
-            if(!startStr || !endStr) return alert('開始日と終了日を選択してください');
-            let current = new Date(startStr); const end = new Date(endStr);
-            while(current <= end) {
-                let y = current.getFullYear(); let m = ('0'+(current.getMonth()+1)).slice(-2); let d = ('0'+current.getDate()).slice(-2);
-                dates.push(`${y}/${m}/${d}`); current.setDate(current.getDate()+1);
-            }
-        }
-        if(await sendAction("addSchedules", { dates: dates, time_slot: time, capacity: Number(capacity) })) {
-            alert('時間枠を追加・保存しました！');
+        if(await sendAction("addSchedules", { dates: [date], time_slot: time, capacity: Number(capacity) })) {
+            alert('予約枠をその場で作成・保存しました！');
             login(currentToken);
         }
     }
 
     async function deleteScheduleFromServer(id) {
-        if(!confirm('この時間枠を削除しますか？')) return;
+        if(!confirm('この受付枠を削除しますか？')) return;
         if(await sendAction("deleteSchedule", { id: id })) { state.schedules = state.schedules.filter(s => s.id !== id); renderAll(); }
     }
     async function deleteBookingFromServer(id) {
