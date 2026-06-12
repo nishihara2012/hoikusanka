@@ -150,7 +150,7 @@
 </div>
 
 <script>
-    const APP_URL = "https://script.google.com/macros/s/AKfycbx6RJo8KaIgR2x3vCSK8tbdkiQn_XmvYuR7l1C9g3798hovQNZW0wZi0XJcQKB8YCWP/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbzKuSGEKCZGbqHrWOXIVFXAOeq8N3I60ri677yk9j1-f3RlyroBSrl-xKl2ihur1KJN/exec";
 
     let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, deadlineMode: 'days', deadlineDays: 0, deadlineValue: '', adminEmail: '', adminPassword: 'admin123', reservations: [] };
 
@@ -223,7 +223,7 @@
             document.getElementById('deadlineValue').value = serverData.deadlineValue || "";
             document.getElementById('adminEmailInput').value = serverData.adminEmail || "";
             
-            // 💡 最初の仕様に戻しました（現在のPWがそのままテキストボックス内に読み込まれる状態）
+            // 💡 一番最初の、正常に動いていた時の値引き渡しロジックに完全固定
             document.getElementById('adminPwInput').value = serverData.adminPassword || "admin123";
             
             toggleDeadlineInput(); renderSettings(); renderReservations(); showStatus("");
