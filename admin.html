@@ -223,9 +223,8 @@
             document.getElementById('deadlineValue').value = serverData.deadlineValue || "";
             document.getElementById('adminEmailInput').value = serverData.adminEmail || "";
             
-            // 読み込み時は入力欄の初期値を空にし、プレースホルダーとして現在のPWを表示
-            document.getElementById('adminPwInput').value = "";
-            document.getElementById('adminPwInput').placeholder = "設定中のパスワード: " + serverData.adminPassword;
+            // 💡 最初の仕様に戻しました（現在のPWがそのままテキストボックス内に読み込まれる状態）
+            document.getElementById('adminPwInput').value = serverData.adminPassword || "admin123";
             
             toggleDeadlineInput(); renderSettings(); renderReservations(); showStatus("");
         } catch(e) {
@@ -242,11 +241,9 @@
         } catch(e) { alert('メールアドレスを変更しました。'); loadData(); }
     }
 
-    // ★ 修正箇所：正しく入力された文字を取得して送信するよう修正
     async function saveAdminPassword() {
         const pw = document.getElementById('adminPwInput').value.trim();
-        if(!pw) { alert('新しいパスワードを入力してください。'); return; }
-        showStatus("パスワード変更中...");
+        if(!pw) return; showStatus("パスワード変更中...");
         try {
             await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', newPassword: pw }) });
             alert('パスワードを変更しました。次回のログインから有効になります。'); loadData();
