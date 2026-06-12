@@ -16,6 +16,7 @@
         .radio-group { display: flex; gap: 20px; }
         button { width: 100%; background-color: #ff6f61; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         button:hover { background-color: #ee5e50; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
         #loading { text-align: center; color: #666; font-size: 14px; margin-bottom: 15px; }
     </style>
 </head>
@@ -71,11 +72,11 @@
 
 <script>
     // ⚠️ あなたのGASのウェブアプリURLをここに貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycby5E6HT6TFmqdx3dJb1lHg6gpoxsDlHJcBsf9PFJmtq77dnQN1ltnsuBGmIbH0mBogf/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxMXJjo49M8vdL9uM6EEg_doCFvvGn2xoZRHXv5SiA6PFqS7AESA6hPkyupmclq29F2/exec";
     
     let masterData = {};
 
-    // ページ読み込み時にGASから初期データを取得
+    // 1. ページ読み込み時にGASから初期データを取得する処理
     window.addEventListener('DOMContentLoaded', async () => {
         try {
             const response = await fetch(`${GAS_URL}?action=getInitialData`);
@@ -103,7 +104,7 @@
         }
     });
 
-    // 日付が選択されたら、その日に対応する「時間帯」を絞り込んで表示
+    // 2. 日付が選択されたら、その日に対応する「時間帯」を絞り込んで表示する処理
     document.getElementById('bookingDate').addEventListener('change', (e) => {
         const selectedDate = e.target.value;
         const timeSelect = document.getElementById('timeSlot');
@@ -125,7 +126,7 @@
         timeSelect.disabled = false;
     });
 
-    // 時間が選択されたら、昼食が必要な時間帯か判定する
+    // 3. 時間が選択されたら、昼食が必要な時間帯か判定する処理
     document.getElementById('timeSlot').addEventListener('change', (e) => {
         const selectedTime = e.target.value;
         const lunchSection = document.getElementById('lunchSection');
@@ -140,10 +141,56 @@
         }
     });
 
-    // フォーム送信時の処理（※次のステップでGASへデータを送る処理を書きます）
-    document.getElementById('bookingForm').addEventListener('submit', (e) => {
+    // 4. フォーム送信時の処理（GASへデータを送信）
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        alert('現在、送信処理を構築中です。画面の見た目と昼食の出し分けチェックは成功です！');
+        
+        // ボタンを連打されないように無効化
+        const submitBtn = e.target.querySelector('button');
+        submitBtn.disabled = true;
+        submitBtn.innerText = '送信中...';
+
+        // 画面から入力された値を取得
+        const lunchRadio = document.querySelector('input[name="lunch"]:checked');
+        const lunchSection = document.getElementById('lunchSection');
+        
+        // 昼食エリアが表示されている場合のみラジオボタンの値を送り、それ以外は「非対象」とする
+        const lunchNeeded = (lunchSection.style.display === 'block') ? lunchRadio.value : '非対象';
+
+        const formData = {
+            childClass: document.getElementById('childClass').value,
+            childName: document.getElementById('childName').value,
+            date: document.getElementById('bookingDate').value,
+            timeSlot: document.getElementById('timeSlot').value,
+            lunchNeeded: lunchNeeded,
+            email: document.getElementById('email').value
+        };
+
+        try {
+            // GASのdoPost関数に向けてデータを送信
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                alert('予約が完了しました！確認メールをご確認ください。');
+                document.getElementById('bookingForm').reset(); // フォームを空にする
+                document.getElementById('lunchSection').style.display = 'none';
+                document.getElementById('timeSlot').disabled = true;
+            } else {
+                alert('エラーが発生しました: ' + result.message);
+            }
+        } catch (error) {
+            alert('通信エラーが発生しました。時間をおいて再度お試しください。');
+            console.error(error);
+        } finally {
+            // ボタンを元に戻す
+            submitBtn.disabled = false;
+            submitBtn.innerText = '予約を確定する';
+        }
     });
 </script>
 </body>
