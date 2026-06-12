@@ -54,7 +54,7 @@
         </div>
 
         <div class="form-group lunch-box" id="lunchSection">
-            <div class="lunch-title">給食の試食</div>
+            <div class="lunch-title">給食の試食（420円）</div>
             <div class="radio-group">
                 <label><input type="radio" name="lunch" value="あり"> 必要（試食する）</label>
                 <label><input type="radio" name="lunch" value="なし" checked> 不要</label>
@@ -71,31 +71,39 @@
 </div>
 
 <script>
-    // ⚠️ あなたのGASのウェブアプリURLをここに貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzhxfE1-9UWvkDPqfq39D_3d1z8Z6feSwHgyKd6clKyHlf-JrN949sP03PWS6Wk4Ubd/exec";
-    
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyJ89x35cNHIazC7vd2TQGUVVINVD-jXKbHE2Z_sNo_v_KH9_-lzj5bdl2iQl1qcG_B/exec";
     let masterData = {};
 
-    // 1. ページ読み込み時にGASから初期データを取得する処理
+    // 日付文字列を日本語曜日付き（yyyy/mm/dd(曜日)）に変換する関数
+    function formatJapaneseDate(dateStr) {
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+            const y = d.getFullYear();
+            const m = ('0' + (d.getMonth() + 1)).slice(-2);
+            const date = ('0' + d.getDate()).slice(-2);
+            return `${y}/${m}/${date}(${dayOfWeek})`;
+        } catch(e) {
+            return dateStr;
+        }
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
         try {
             const response = await fetch(`${GAS_URL}?action=getInitialData`);
             masterData = await response.json();
             
-            // クラスの選択肢を生成
             const classSelect = document.getElementById('childClass');
-            masterData.classes.forEach(c => {
-                classSelect.add(new Option(c, c));
-            });
+            masterData.classes.forEach(c => classSelect.add(new Option(c, c)));
 
-            // 日付の選択肢を生成（重複を排除）
             const dateSelect = document.getElementById('bookingDate');
-            const uniqueDates = [...new Set(masterData.schedules.map(s => s.date))];
+            const uniqueDates = [...new Set(masterData.schedules.map(s => s.date))].sort();
             uniqueDates.forEach(d => {
-                dateSelect.add(new Option(d, d));
+                // 表示用は日本語曜日付き、値(value)は標準形式
+                dateSelect.add(new Option(formatJapaneseDate(d), d));
             });
 
-            // ローディングを消してフォームを表示
             document.getElementById('loading').style.display = 'none';
             document.getElementById('bookingForm').style.display = 'block';
         } catch (error) {
@@ -104,80 +112,66 @@
         }
     });
 
-    // 2. 日付が選択されたら、その日に対応する「時間帯」を絞り込んで表示する処理
     document.getElementById('bookingDate').addEventListener('change', (e) => {
         const selectedDate = e.target.value;
         const timeSelect = document.getElementById('timeSlot');
         
         timeSelect.innerHTML = '<option value="">選択してください</option>';
-        document.getElementById('lunchSection').style.display = 'none'; // 昼食エリアを一旦隠す
+        document.getElementById('lunchSection').style.display = 'none';
 
         if (!selectedDate) {
             timeSelect.disabled = true;
             return;
         }
 
-        // 選択された日付のスケジュールを抽出
         const filteredSchedules = masterData.schedules.filter(s => s.date === selectedDate);
-        
         filteredSchedules.forEach(s => {
             timeSelect.add(new Option(s.time_slot, s.time_slot));
         });
         timeSelect.disabled = false;
     });
 
-    // 3. 時間が選択されたら、昼食が必要な時間帯か判定する処理
     document.getElementById('timeSlot').addEventListener('change', (e) => {
         const selectedTime = e.target.value;
         const lunchSection = document.getElementById('lunchSection');
-        
-        // master_settingsのlunch_times（昼食が必要な時間設定）に含まれているかチェック
         const isLunchRequiredTime = masterData.lunch_times.includes(selectedTime);
         
         if (isLunchRequiredTime) {
-            lunchSection.style.display = 'block'; // 条件に合致したら表示
+            lunchSection.style.display = 'block';
         } else {
-            lunchSection.style.display = 'none';  // 合致しなければ非表示
+            lunchSection.style.display = 'none';
         }
     });
 
-    // 4. フォーム送信時の処理（GASへデータを送信）
     document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        // ボタンを連打されないように無効化
         const submitBtn = e.target.querySelector('button');
         submitBtn.disabled = true;
         submitBtn.innerText = '送信中...';
 
-        // 画面から入力された値を取得
         const lunchRadio = document.querySelector('input[name="lunch"]:checked');
         const lunchSection = document.getElementById('lunchSection');
-        
-        // 昼食エリアが表示されている場合のみラジオボタンの値を送り、それ以外は「非対象」とする
         const lunchNeeded = (lunchSection.style.display === 'block') ? lunchRadio.value : '非対象';
 
         const formData = {
             childClass: document.getElementById('childClass').value,
             childName: document.getElementById('childName').value,
-            date: document.getElementById('bookingDate').value,
+            date: formatJapaneseDate(document.getElementById('bookingDate').value), // 曜日付きで送信
             timeSlot: document.getElementById('timeSlot').value,
             lunchNeeded: lunchNeeded,
             email: document.getElementById('email').value
         };
 
         try {
-            // GASのdoPost関数に向けてデータを送信
             const response = await fetch(GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify(formData)
             });
-            
             const result = await response.json();
             
             if (result.status === 'success') {
                 alert('予約が完了しました！確認メールをご確認ください。');
-                document.getElementById('bookingForm').reset(); // フォームを空にする
+                document.getElementById('bookingForm').reset();
                 document.getElementById('lunchSection').style.display = 'none';
                 document.getElementById('timeSlot').disabled = true;
             } else {
@@ -185,9 +179,7 @@
             }
         } catch (error) {
             alert('通信エラーが発生しました。時間をおいて再度お試しください。');
-            console.error(error);
         } finally {
-            // ボタンを元に戻す
             submitBtn.disabled = false;
             submitBtn.innerText = '予約を確定する';
         }
