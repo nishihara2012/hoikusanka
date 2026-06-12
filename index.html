@@ -6,7 +6,7 @@
     <title>クラス予約フォーム</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; padding: 20px; font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; }
+        body { background-color: #f8f9fa; padding: 20px; font-family: "Helvetica Neue", Arial, sans-serif; }
         .booking-card { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .form-label { font-weight: bold; color: #495057; }
         .btn-submit { background-color: #0d6efd; color: #fff; font-weight: bold; padding: 12px; border-radius: 8px; }
@@ -18,37 +18,25 @@
 <div class="container">
     <div class="booking-card">
         <h3 class="text-center mb-4 fw-bold text-primary">🌿 クラス予約フォーム</h3>
-        
         <div id="status" class="alert alert-info text-center d-none">データを読み込み中...</div>
 
         <form id="bookingForm" onsubmit="submitReservation(event)">
             <div class="mb-3">
                 <label for="date" class="form-label">📅 希望日</label>
-                <select id="date" class="form-select" required>
-                    <option value="">選択してください</option>
-                </select>
+                <select id="date" class="form-select" required><option value="">選択してください</option></select>
             </div>
 
             <div class="mb-3">
                 <label for="className" class="form-label">🌿 クラス名</label>
-                <select id="className" class="form-select" required>
-                    <option value="">選択してください</option>
-                </select>
+                <select id="className" class="form-select" required><option value="">選択してください</option></select>
             </div>
 
             <div class="mb-3">
                 <label for="time" class="form-label">🕒 時間帯</label>
-                <select id="time" class="form-select" required>
-                    <option value="">選択してください</option>
-                </select>
+                <select id="time" class="form-select" onchange="handleTimeChange()" required><option value="">選択してください</option></select>
             </div>
 
-            <div class="mb-3">
-                <label for="name" class="form-label">👤 お名前</label>
-                <input type="text" id="name" class="form-control" placeholder="山田 太郎" required>
-            </div>
-
-            <div class="mb-3">
+            <div class="mb-3 d-none" id="lunchArea">
                 <label class="form-label d-block">🍱 昼食の注文</label>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="lunch" id="lunchYes" value="あり" checked>
@@ -58,6 +46,11 @@
                     <input class="form-check-input" type="radio" name="lunch" id="lunchNo" value="なし">
                     <label class="form-check-label" for="lunchNo">注文しない（なし）</label>
                 </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="name" class="form-label">👤 お名前</label>
+                <input type="text" id="name" class="form-control" placeholder="山田 太郎" required>
             </div>
 
             <div class="mb-4">
@@ -72,28 +65,30 @@
 </div>
 
 <script>
-    // ⚠️【最重要】Google GASのURLをここに貼り付けてください！
-    const APP_URL = "https://script.google.com/macros/s/AKfycbz2SO8KCHZ3s7KJs4aO8FKlpCkZhzM5OOeSddO0mT-fnH0Qmwn49pIbzw19-gm3W2XK/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbyS0-YjztyRMLXh8h9DxzVJUxbCnuH4vhIQxqIuyiKUW90KZ9AcqtPFORqojB0QKjv8/exec";
 
     let serverData = { dates: [], times: [], classes: [], maxCapacity: 2 };
 
     async function loadData() {
         showStatus("データを読み込み中...");
         try {
-            // 末尾に必ずパラメータを付与してブラウザのセキュリティブロックを回避
-            const res = await fetch(APP_URL + "?mode=user_fetch&t=" + Date.now());
+            const res = await fetch(APP_URL + "?mode=user&t=" + Date.now());
             serverData = await res.json();
-            
-            // 選択肢の反映
             populateSelect('date', serverData.dates, true);
             populateSelect('className', serverData.classes);
             populateSelect('time', serverData.times);
-            
             showStatus("");
-        } catch(e) {
-            // 🚨【超重要】通信エラーが起きても画面を赤枠でフリーズさせず、
-            // 空の選択肢のままフォームを安全に維持させます
-            showStatus("");
+        } catch(e) { showStatus(""); }
+    }
+
+    // ★時間帯を選んだら昼食エリアを出す判定
+    function handleTimeChange() {
+        const timeSelect = document.getElementById('time');
+        const lunchArea = document.getElementById('lunchArea');
+        if (timeSelect.value !== "") {
+            lunchArea.classList.remove('d-none'); // 選択されたら表示
+        } else {
+            lunchArea.classList.add('d-none');    // 未選択なら隠す
         }
     }
 
@@ -101,24 +96,12 @@
         const select = document.getElementById(id);
         select.innerHTML = '<option value="">選択してください</option>';
         if(!array || array.length === 0) return;
-        
-        // 重複を除去してソート
         let uniqueArray = [...new Set(array)].sort();
-        
         uniqueArray.forEach(item => {
             if(!item) return;
-            let val = item;
-            let text = item;
-            
-            if(isDate) {
-                val = formatDateDisplay(item);
-                text = val;
-            } else {
-                if(id === 'className' && !text.endsWith('クラス')) {
-                    text = text + 'クラス';
-                }
-            }
-            
+            let val = item; let text = item;
+            if(isDate) { val = formatDateDisplay(item); text = val; } 
+            else { if(id === 'className' && !text.endsWith('クラス')) { text = text + 'クラス'; } }
             select.innerHTML += `<option value="${val}">${text}</option>`;
         });
     }
@@ -130,12 +113,11 @@
 
     async function submitReservation(event) {
         event.preventDefault();
-        
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         showStatus("予約を送信中...");
 
-        const lunchVal = document.querySelector('input[name="lunch"]:checked').value;
+        const lunchVal = document.getElementById('lunchArea').classList.contains('d-none') ? "なし" : document.querySelector('input[name="lunch"]:checked').value;
         const payload = {
             action: 'addReservation',
             date: document.getElementById('date').value,
@@ -147,34 +129,20 @@
         };
 
         try {
-            // 💡 no-cors モードでGoogle GASへ強制送信
-            await fetch(APP_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                mode: 'no-cors'
-            });
-            
-            // 送信完了画面への案内
-            alert('予約リクエストを送信しました！\nスプレッドシートへの反映を確認してください。');
+            await fetch(APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+            alert('予約が完了しました！');
             document.getElementById('bookingForm').reset();
+            document.getElementById('lunchArea').classList.add('d-none'); // 昼食欄を隠す
             showStatus("");
         } catch(e) {
-            alert('送信処理を行いました。スプレッドシートをご確認ください。');
+            alert('送信処理を行いました。');
             document.getElementById('bookingForm').reset();
+            document.getElementById('lunchArea').classList.add('d-none');
             showStatus("");
-        } finally {
-            btn.disabled = false;
-        }
+        } finally { btn.disabled = false; }
     }
 
-    function showStatus(msg) {
-        const div = document.getElementById('status');
-        if(!msg) { div.classList.add('d-none'); return; }
-        div.textContent = msg;
-        div.classList.remove('d-none');
-    }
-
-    // 起動時にデータを読み込む
+    function showStatus(msg) { const div = document.getElementById('status'); if(!msg) { div.classList.add('d-none'); return; } div.textContent = msg; div.classList.remove('d-none'); }
     window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
