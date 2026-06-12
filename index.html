@@ -71,10 +71,9 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxnchKvhmxsCrdvyEOHVSPnRxoXkKY6Q4fFU1Eqeloaa3Ze8Y_MOJQBtGAhI1KZqwEM/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxKHqXzxBraJVERYo7js2JoQd4TnKOl4-RHRXJySelNubgmtwruXyTC-S3ZNHhmlWay/exec";
     let masterData = {};
 
-    // 日付文字列を日本語曜日付き（yyyy/mm/dd(曜日)）に変換する関数
     function formatJapaneseDate(dateStr) {
         try {
             const d = new Date(dateStr);
@@ -84,9 +83,7 @@
             const m = ('0' + (d.getMonth() + 1)).slice(-2);
             const date = ('0' + d.getDate()).slice(-2);
             return `${y}/${m}/${date}(${dayOfWeek})`;
-        } catch(e) {
-            return dateStr;
-        }
+        } catch(e) { return dateStr; }
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -94,13 +91,18 @@
             const response = await fetch(`${GAS_URL}?action=getInitialData`);
             masterData = await response.json();
             
+            // 該当するスケジュールがない（一括締切など）の場合
+            if(!masterData.classes || masterData.classes.length === 0) {
+                document.getElementById('loading').innerHTML = '<b style="color:red;">現在、すべての保育参加予約の受付を終了しております。</b>';
+                return;
+            }
+
             const classSelect = document.getElementById('childClass');
             masterData.classes.forEach(c => classSelect.add(new Option(c, c)));
 
             const dateSelect = document.getElementById('bookingDate');
             const uniqueDates = [...new Set(masterData.schedules.map(s => s.date))].sort();
             uniqueDates.forEach(d => {
-                // 表示用は日本語曜日付き、値(value)は標準形式
                 dateSelect.add(new Option(formatJapaneseDate(d), d));
             });
 
@@ -108,7 +110,6 @@
             document.getElementById('bookingForm').style.display = 'block';
         } catch (error) {
             document.getElementById('loading').innerText = 'データの読み込みに失敗しました。再読み込みしてください。';
-            console.error(error);
         }
     });
 
@@ -126,7 +127,21 @@
 
         const filteredSchedules = masterData.schedules.filter(s => s.date === selectedDate);
         filteredSchedules.forEach(s => {
-            timeSelect.add(new Option(s.time_slot, s.time_slot));
+            const leftSlots = s.capacity - s.reserved_count; // 残り枠の計算
+            let optionText = s.time_slot;
+            
+            if (leftSlots <= 0) {
+                optionText += " (満席)";
+            } else {
+                optionText += ` (残り ${leftSlots} 名)`;
+            }
+            
+            const opt = new Option(optionText, s.time_slot);
+            if (leftSlots <= 0) {
+                opt.disabled = true; // 満席の場合は選択不可にする
+                opt.style.color = '#ccc';
+            }
+            timeSelect.add(opt);
         });
         timeSelect.disabled = false;
     });
@@ -156,26 +171,21 @@
         const formData = {
             childClass: document.getElementById('childClass').value,
             childName: document.getElementById('childName').value,
-            date: formatJapaneseDate(document.getElementById('bookingDate').value), // 曜日付きで送信
+            date: formatJapaneseDate(document.getElementById('bookingDate').value),
             timeSlot: document.getElementById('timeSlot').value,
             lunchNeeded: lunchNeeded,
             email: document.getElementById('email').value
         };
 
         try {
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify(formData)
-            });
+            const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(formData) });
             const result = await response.json();
             
             if (result.status === 'success') {
                 alert('予約が完了しました！確認メールをご確認ください。');
-                document.getElementById('bookingForm').reset();
-                document.getElementById('lunchSection').style.display = 'none';
-                document.getElementById('timeSlot').disabled = true;
+                location.reload(); // 残数を最新にするため画面をリロード
             } else {
-                alert('エラーが発生しました: ' + result.message);
+                alert(result.message);
             }
         } catch (error) {
             alert('通信エラーが発生しました。時間をおいて再度お試しください。');
