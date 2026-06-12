@@ -150,7 +150,7 @@
 </div>
 
 <script>
-    const APP_URL = "https://script.google.com/macros/s/AKfycbzKuSGEKCZGbqHrWOXIVFXAOeq8N3I60ri677yk9j1-f3RlyroBSrl-xKl2ihur1KJN/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbw20YCmFs_ngX46MskXZGVbkrvw9znnyG7hb7hJBFLDxs5Axc68Xz_oBl7qR9wJ1f9Z/exec";
 
     let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, deadlineMode: 'days', deadlineDays: 0, deadlineValue: '', adminEmail: '', adminPassword: 'admin123', reservations: [] };
 
@@ -223,7 +223,7 @@
             document.getElementById('deadlineValue').value = serverData.deadlineValue || "";
             document.getElementById('adminEmailInput').value = serverData.adminEmail || "";
             
-            // 💡 一番最初の、正常に動いていた時の値引き渡しロジックに完全固定
+            // 💡 確実に値をセットする初期コード
             document.getElementById('adminPwInput').value = serverData.adminPassword || "admin123";
             
             toggleDeadlineInput(); renderSettings(); renderReservations(); showStatus("");
