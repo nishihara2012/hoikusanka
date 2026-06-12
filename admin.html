@@ -19,10 +19,12 @@
         #loginSection { max-width: 400px; margin: 100px auto; }
         #adminContent { display: none; }
         .section-block { background: #fafafa; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
-        .flex-input { display: flex; gap: 10px; margin-bottom: 15px; }
+        .flex-input { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
         .item-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .item-tag { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 14px; display: flex; align-items: center; }
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        .mode-select { margin-bottom: 10px; font-size: 14px; }
+        .mode-select label { display: inline-block; margin-right: 15px; font-weight: normal; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -74,10 +76,24 @@
             <h3>希望日（日程）設定</h3>
             <button class="btn btn-danger btn-sm" onclick="clearAll('dates')">一括削除</button>
         </div>
-        <div class="flex-input">
-            <input type="date" id="newDate" style="flex:1">
-            <button class="btn" onclick="addItem('dates', 'newDate')">追加</button>
+        
+        <div class="mode-select">
+            <label><input type="radio" name="dateMode" value="single" checked onclick="toggleDateMode()"> 1日ずつ追加</label>
+            <label><input type="radio" name="dateMode" value="range" onclick="toggleDateMode()"> 期間（○日～○日）でまとめて追加</label>
         </div>
+
+        <div class="flex-input" id="singleDateInput">
+            <input type="date" id="newDate" style="flex:1">
+            <button class="btn" onclick="addSingleDate()">追加</button>
+        </div>
+
+        <div class="flex-input" id="rangeDateInput" style="display:none;">
+            <input type="date" id="newDateStart">
+            <span>～</span>
+            <input type="date" id="newDateEnd">
+            <button class="btn" onclick="addRangeDates()">期間を追加</button>
+        </div>
+
         <div class="item-list" id="listDates"></div>
     </div>
 
@@ -112,10 +128,8 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyLbZozVPRUS9HEpDPatyyxpzie6eyVfW3-MbRTZ7Pt-wIacjwjBYABfYq7yrPRgFUW/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzhxfE1-9UWvkDPqfq39D_3d1z8Z6feSwHgyKd6clKyHlf-JrN949sP03PWS6Wk4Ubd/exec";
     let currentToken = ""; 
-    
-    // 状態管理用オブジェクト
     let currentConfig = { classes: [], dates: [], timeSlots: [], lunchTimes: [] };
 
     async function login() {
@@ -144,8 +158,9 @@
         } catch (error) { alert('通信エラーが発生しました。'); }
     }
 
-    // 画面のタグ一覧を再描画
     function renderLists() {
+        // 日付を並び替えて表示
+        currentConfig.dates.sort();
         renderTagBridge('classes', 'listClasses');
         renderTagBridge('dates', 'listDates');
         renderTagBridge('timeSlots', 'listTimeSlots');
@@ -163,25 +178,74 @@
         });
     }
 
-    // 個別追加
+    function toggleDateMode() {
+        const mode = document.querySelector('input[name="dateMode"]:checked').value;
+        if(mode === 'single') {
+            document.getElementById('singleDateInput').style.display = 'flex';
+            document.getElementById('rangeDateInput').style.display = 'none';
+        } else {
+            document.getElementById('singleDateInput').style.display = 'none';
+            document.getElementById('rangeDateInput').style.display = 'flex';
+        }
+    }
+
+    // 単一日付の追加
+    function addSingleDate() {
+        const input = document.getElementById('newDate');
+        if(!input.value) return;
+        const formatted = input.value.replace(/-/g, '/');
+        if(!currentConfig.dates.includes(formatted)) {
+            currentConfig.dates.push(formatted);
+        }
+        input.value = '';
+        renderLists();
+    }
+
+    // 期間（○日～○日）の追加処理
+    function addRangeDates() {
+        const startInput = document.getElementById('newDateStart').value;
+        const endInput = document.getElementById('newDateEnd').value;
+        
+        if(!startInput || !endInput) return alert('開始日と終了日の両方を選択してください。');
+        
+        const start = new Date(startInput);
+        const end = new Date(endInput);
+        
+        if(start > end) return alert('開始日が終了日より後の日付になっています。');
+        
+        // 1日ずつ進めながら配列に追加
+        let current = new Date(start);
+        while(current <= end) {
+            let y = current.getFullYear();
+            let m = ('0' + (current.getMonth() + 1)).slice(-2);
+            let d = ('0' + current.getDate()).slice(-2);
+            let formatted = `${y}/${m}/${d}`;
+            
+            if(!currentConfig.dates.includes(formatted)) {
+                currentConfig.dates.push(formatted);
+            }
+            current.setDate(current.getDate() + 1); // 翌日へ
+        }
+        
+        document.getElementById('newDateStart').value = '';
+        document.getElementById('newDateEnd').value = '';
+        renderLists();
+    }
+
     function addItem(key, inputId) {
         const input = document.getElementById(inputId);
         let value = input.value.trim();
         if(!value) return;
-        if(input.type === 'date') value = value.replace(/-/g, '/'); // 日付形式の統一
-        
         currentConfig[key].push(value);
         input.value = '';
         renderLists();
     }
 
-    // 個別削除
     function deleteItem(key, index) {
         currentConfig[key].splice(index, 1);
         renderLists();
     }
 
-    // 一括削除（クリア）
     function clearAll(key) {
         if(confirm('この項目をすべて一括削除しますか？')) {
             currentConfig[key] = [];
@@ -189,36 +253,23 @@
         }
     }
 
-    // メール・PWの個別保存
     async function saveIndividual(type) {
         const payload = { pw: currentToken, classes: currentConfig.classes, dates: currentConfig.dates, timeSlots: currentConfig.timeSlots, lunchTimes: currentConfig.lunchTimes };
-        if(type === 'email') {
-            payload.adminEmail = document.getElementById('adminEmail').value;
-        } else if(type === 'pw') {
+        if(type === 'email') payload.adminEmail = document.getElementById('adminEmail').value;
+        if(type === 'pw') {
             const newPw = document.getElementById('adminPassword').value;
             if(!newPw) return alert('新しいパスワードを入力してください');
             payload.adminPassword = newPw;
         }
-
         if(await sendToServer(payload)) {
             alert('更新しました。');
             if(type === 'pw') location.reload();
         }
     }
 
-    // 全マスター設定の一括保存
     async function saveAllMaster() {
-        const payload = {
-            pw: currentToken,
-            adminEmail: document.getElementById('adminEmail').value,
-            classes: currentConfig.classes,
-            dates: currentConfig.dates,
-            timeSlots: currentConfig.timeSlots,
-            lunchTimes: currentConfig.lunchTimes
-        };
-        if(await sendToServer(payload)) {
-            alert('すべてのマスター設定を保存・確定しました！');
-        }
+        const payload = { pw: currentToken, adminEmail: document.getElementById('adminEmail').value, classes: currentConfig.classes, dates: currentConfig.dates, timeSlots: currentConfig.timeSlots, lunchTimes: currentConfig.lunchTimes };
+        if(await sendToServer(payload)) alert('すべてのマスター設定を保存・確定しました！');
     }
 
     async function sendToServer(payload) {
