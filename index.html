@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保育参加 予約システム</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f7f9fa; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: #ff6f61; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
+        input[type="text"], input[type="email"], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .lunch-box { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; display: none; }
+        .lunch-title { font-weight: bold; color: #856404; margin-bottom: 8px; }
+        .radio-group { display: flex; gap: 20px; }
+        button { width: 100%; background-color: #ff6f61; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #ee5e50; }
+        #loading { text-align: center; color: #666; font-size: 14px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>保育参加 予約フォーム</h2>
+    <div id="loading">設定データを読み込み中...</div>
+    
+    <form id="bookingForm" style="display: none;">
+        <div class="form-group">
+            <label for="childClass">クラス</label>
+            <select id="childClass" required>
+                <option value="">選択してください</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="childName">お子様のお名前</label>
+            <input type="text" id="childName" placeholder="山田 太郎" required>
+        </div>
+
+        <div class="form-group">
+            <label for="bookingDate">希望日</label>
+            <select id="bookingDate" required>
+                <option value="">選択してください</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="timeSlot">希望時間</label>
+            <select id="timeSlot" required disabled>
+                <option value="">まず希望日を選択してください</option>
+            </select>
+        </div>
+
+        <div class="form-group lunch-box" id="lunchSection">
+            <div class="lunch-title">給食の試食</div>
+            <div class="radio-group">
+                <label><input type="radio" name="lunch" value="あり"> 必要（試食する）</label>
+                <label><input type="radio" name="lunch" value="なし" checked> 不要</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="email">メールアドレス（予約完了通知用）</label>
+            <input type="email" id="email" placeholder="example@hoiku.com" required>
+        </div>
+
+        <button type="submit">予約を確定する</button>
+    </form>
+</div>
+
+<script>
+    // ⚠️ あなたのGASのウェブアプリURLをここに貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby5E6HT6TFmqdx3dJb1lHg6gpoxsDlHJcBsf9PFJmtq77dnQN1ltnsuBGmIbH0mBogf/exec";
+    
+    let masterData = {};
+
+    // ページ読み込み時にGASから初期データを取得
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch(`${GAS_URL}?action=getInitialData`);
+            masterData = await response.json();
+            
+            // クラスの選択肢を生成
+            const classSelect = document.getElementById('childClass');
+            masterData.classes.forEach(c => {
+                classSelect.add(new Option(c, c));
+            });
+
+            // 日付の選択肢を生成（重複を排除）
+            const dateSelect = document.getElementById('bookingDate');
+            const uniqueDates = [...new Set(masterData.schedules.map(s => s.date))];
+            uniqueDates.forEach(d => {
+                dateSelect.add(new Option(d, d));
+            });
+
+            // ローディングを消してフォームを表示
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('bookingForm').style.display = 'block';
+        } catch (error) {
+            document.getElementById('loading').innerText = 'データの読み込みに失敗しました。再読み込みしてください。';
+            console.error(error);
+        }
+    });
+
+    // 日付が選択されたら、その日に対応する「時間帯」を絞り込んで表示
+    document.getElementById('bookingDate').addEventListener('change', (e) => {
+        const selectedDate = e.target.value;
+        const timeSelect = document.getElementById('timeSlot');
+        
+        timeSelect.innerHTML = '<option value="">選択してください</option>';
+        document.getElementById('lunchSection').style.display = 'none'; // 昼食エリアを一旦隠す
+
+        if (!selectedDate) {
+            timeSelect.disabled = true;
+            return;
+        }
+
+        // 選択された日付のスケジュールを抽出
+        const filteredSchedules = masterData.schedules.filter(s => s.date === selectedDate);
+        
+        filteredSchedules.forEach(s => {
+            timeSelect.add(new Option(s.time_slot, s.time_slot));
+        });
+        timeSelect.disabled = false;
+    });
+
+    // 時間が選択されたら、昼食が必要な時間帯か判定する
+    document.getElementById('timeSlot').addEventListener('change', (e) => {
+        const selectedTime = e.target.value;
+        const lunchSection = document.getElementById('lunchSection');
+        
+        // master_settingsのlunch_times（昼食が必要な時間設定）に含まれているかチェック
+        const isLunchRequiredTime = masterData.lunch_times.includes(selectedTime);
+        
+        if (isLunchRequiredTime) {
+            lunchSection.style.display = 'block'; // 条件に合致したら表示
+        } else {
+            lunchSection.style.display = 'none';  // 合致しなければ非表示
+        }
+    });
+
+    // フォーム送信時の処理（※次のステップでGASへデータを送る処理を書きます）
+    document.getElementById('bookingForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert('現在、送信処理を構築中です。画面の見た目と昼食の出し分けチェックは成功です！');
+    });
+</script>
+</body>
+</html>
