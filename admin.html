@@ -10,14 +10,19 @@
         h2, h3 { color: #2c3e50; border-bottom: 2px solid #34495e; padding-bottom: 8px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
-        input[type="text"], input[type="password"], input[type="email"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        textarea { height: 100px; resize: vertical; }
-        .help-text { font-size: 13px; color: #7f8c8d; margin-top: 5px; }
-        button { background-color: #34495e; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        button:hover { background-color: #2c3e50; }
+        input[type="text"], input[type="password"], input[type="email"], input[type="date"] { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .btn { background-color: #34495e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn:hover { background-color: #2c3e50; }
+        .btn-danger { background-color: #e74c3c; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; margin-left: 8px; }
         #loginSection { max-width: 400px; margin: 100px auto; }
         #adminContent { display: none; }
         .section-block { background: #fafafa; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .flex-input { display: flex; gap: 10px; margin-bottom: 15px; }
+        .item-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .item-tag { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 14px; display: flex; align-items: center; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
@@ -26,59 +31,93 @@
     <h2>管理者ログイン</h2>
     <div class="form-group">
         <label for="loginPw">管理パスワード</label>
-        <input type="password" id="loginPw" placeholder="パスワードを入力">
+        <input type="password" id="loginPw" style="width:100%" placeholder="パスワードを入力">
     </div>
-    <button onclick="login()">ログイン</button>
+    <button class="btn" onclick="login()">ログイン</button>
 </div>
 
 <div id="adminContent" class="container">
     <h2>保育参加 設定管理画面</h2>
-    <p>カンマ（,）で区切って入力することで、複数の項目を設定できます。</p>
 
     <div class="section-block">
-        <h3>管理者設定</h3>
+        <h3>管理者設定（個別変更）</h3>
         <div class="form-group">
-            <label for="adminEmail">通知用メールアドレス</label>
-            <input type="email" id="adminEmail" required>
-            <div class="help-text">予約が入った際、ここに通知メールが届きます。</div>
+            <label>通知用メールアドレス</label>
+            <div class="flex-input">
+                <input type="email" id="adminEmail" style="flex:1">
+                <button class="btn" onclick="saveIndividual('email')">アドレスのみ更新</button>
+            </div>
         </div>
         <div class="form-group">
-            <label for="adminPassword">新しい管理パスワード</label>
-            <input type="password" id="adminPassword" placeholder="変更する場合のみ入力">
+            <label>新しい管理パスワード</label>
+            <div class="flex-input">
+                <input type="password" id="adminPassword" style="flex:1" placeholder="変更する場合のみ入力">
+                <button class="btn" onclick="saveIndividual('pw')">パスワードのみ更新</button>
+            </div>
         </div>
     </div>
 
     <div class="section-block">
-        <h3>選択肢・マスター設定</h3>
-        
-        <div class="form-group">
-            <label for="inputClasses">クラス設定</label>
-            <input type="text" id="inputClasses" placeholder="ひよこ組,うさぎ組,くま組">
-            <div class="help-text">予約画面のクラス選択肢になります。</div>
+        <div class="header-flex">
+            <h3>クラス設定</h3>
+            <button class="btn btn-danger btn-sm" onclick="clearAll('classes')">一括削除</button>
         </div>
-
-        <div class="form-group">
-            <label for="inputTimeSlots">時間設定</label>
-            <input type="text" id="inputTimeSlots" placeholder="09:30-11:30,09:30-13:00">
-            <div class="help-text">予約枠を作成する際の時間の選択肢になります。</div>
+        <div class="flex-input">
+            <input type="text" id="newClass" placeholder="例：ひよこ組" style="flex:1">
+            <button class="btn" onclick="addItem('classes', 'newClass')">追加</button>
         </div>
-
-        <div class="form-group">
-            <label for="inputLunchTimes">昼食有無を決める時間設定</label>
-            <input type="text" id="inputLunchTimes" placeholder="09:30-13:00">
-            <div class="help-text">ここに指定した時間帯が選ばれた時だけ、予約画面に「給食の試食有無」が表示されます。</div>
-        </div>
+        <div class="item-list" id="listClasses"></div>
     </div>
 
-    <button onclick="saveSettings()">設定を保存する</button>
+    <div class="section-block">
+        <div class="header-flex">
+            <h3>希望日（日程）設定</h3>
+            <button class="btn btn-danger btn-sm" onclick="clearAll('dates')">一括削除</button>
+        </div>
+        <div class="flex-input">
+            <input type="date" id="newDate" style="flex:1">
+            <button class="btn" onclick="addItem('dates', 'newDate')">追加</button>
+        </div>
+        <div class="item-list" id="listDates"></div>
+    </div>
+
+    <div class="section-block">
+        <div class="header-flex">
+            <h3>時間帯設定</h3>
+            <button class="btn btn-danger btn-sm" onclick="clearAll('timeSlots')">一括削除</button>
+        </div>
+        <div class="flex-input">
+            <input type="text" id="newTimeSlot" placeholder="例：09:30-11:30" style="flex:1">
+            <button class="btn" onclick="addItem('timeSlots', 'newTimeSlot')">追加</button>
+        </div>
+        <div class="item-list" id="listTimeSlots"></div>
+    </div>
+
+    <div class="section-block">
+        <div class="header-flex">
+            <h3>昼食が出る時間帯設定</h3>
+            <button class="btn btn-danger btn-sm" onclick="clearAll('lunchTimes')">一括削除</button>
+        </div>
+        <div class="flex-input">
+            <input type="text" id="newLunchTime" placeholder="例：09:30-13:00" style="flex:1">
+            <button class="btn" onclick="addItem('lunchTimes', 'newLunchTime')">追加</button>
+        </div>
+        <div class="help-text" style="font-size:12px; color:#7f8c8d; margin-bottom:5px;">※上記「時間帯設定」に登録した文字と完全に一致させてください。</div>
+        <div class="item-list" id="listLunchTimes"></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <button class="btn" style="background:#2ecc71; font-size:18px; padding:15px 40px;" onclick="saveAllMaster()">すべてのマスター設定を確定保存する</button>
+    </div>
 </div>
 
 <script>
-    // ⚠️ あなたのGASのウェブアプリURLをここに貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwrSkkjBRM-eLnRCDtu3JaZjf247Ys5FUeWyiMKoS8vsdnBmykg-c0xxNw0f1ateVho/exec";
-    let currentToken = ""; // 簡易ログイン保持用
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyLbZozVPRUS9HEpDPatyyxpzie6eyVfW3-MbRTZ7Pt-wIacjwjBYABfYq7yrPRgFUW/exec";
+    let currentToken = ""; 
+    
+    // 状態管理用オブジェクト
+    let currentConfig = { classes: [], dates: [], timeSlots: [], lunchTimes: [] };
 
-    // ログイン処理
     async function login() {
         const pw = document.getElementById('loginPw').value;
         if(!pw) return alert('パスワードを入力してください');
@@ -88,56 +127,108 @@
             const data = await response.json();
 
             if (data.status === 'success') {
-                currentToken = pw; // パスワードをトークン代わりに保持
+                currentToken = pw;
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('adminContent').style.display = 'block';
                 
-                // 現在の設定値を画面にセット
                 document.getElementById('adminEmail').value = data.config.admin_email;
-                document.getElementById('inputClasses').value = data.config.classes.join(',');
-                document.getElementById('inputTimeSlots').value = data.config.time_slots.join(',');
-                document.getElementById('inputLunchTimes').value = data.config.lunch_times.join(',');
+                currentConfig.classes = data.config.classes;
+                currentConfig.dates = data.config.dates;
+                currentConfig.timeSlots = data.config.time_slots;
+                currentConfig.lunchTimes = data.config.lunch_times;
+                
+                renderLists();
             } else {
                 alert('パスワードが正しくありません。');
             }
-        } catch (error) {
-            alert('通信エラーが発生しました。');
-            console.error(error);
+        } catch (error) { alert('通信エラーが発生しました。'); }
+    }
+
+    // 画面のタグ一覧を再描画
+    function renderLists() {
+        renderTagBridge('classes', 'listClasses');
+        renderTagBridge('dates', 'listDates');
+        renderTagBridge('timeSlots', 'listTimeSlots');
+        renderTagBridge('lunchTimes', 'listLunchTimes');
+    }
+
+    function renderTagBridge(key, elementId) {
+        const container = document.getElementById(elementId);
+        container.innerHTML = '';
+        currentConfig[key].forEach((item, index) => {
+            const tag = document.createElement('div');
+            tag.className = 'item-tag';
+            tag.innerHTML = `${item} <button class="btn btn-danger btn-sm" style="border-radius:50%; padding:2px 6px; margin-left:8px;" onclick="deleteItem('${key}', ${index})">×</button>`;
+            container.appendChild(tag);
+        });
+    }
+
+    // 個別追加
+    function addItem(key, inputId) {
+        const input = document.getElementById(inputId);
+        let value = input.value.trim();
+        if(!value) return;
+        if(input.type === 'date') value = value.replace(/-/g, '/'); // 日付形式の統一
+        
+        currentConfig[key].push(value);
+        input.value = '';
+        renderLists();
+    }
+
+    // 個別削除
+    function deleteItem(key, index) {
+        currentConfig[key].splice(index, 1);
+        renderLists();
+    }
+
+    // 一括削除（クリア）
+    function clearAll(key) {
+        if(confirm('この項目をすべて一括削除しますか？')) {
+            currentConfig[key] = [];
+            renderLists();
         }
     }
 
-    // 設定保存処理
-    async function saveSettings() {
-        if (!confirm('設定を保存しますか？')) return;
-
-        const payload = {
-            pw: currentToken, // 認証用
-            adminEmail: document.getElementById('adminEmail').value,
-            adminPassword: document.getElementById('adminPassword').value, // 空欄ならGAS側で維持
-            classes: document.getElementById('inputClasses').value.split(',').map(s => s.trim()),
-            timeSlots: document.getElementById('inputTimeSlots').value.split(',').map(s => s.trim()),
-            lunchTimes: document.getElementById('inputLunchTimes').value.split(',').map(s => s.trim())
-        };
-
-        try {
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "saveSettings", data: payload })
-            });
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                alert('設定をスプレッドシートに保存しました！');
-                if(payload.adminPassword) {
-                    alert('パスワードが変更されたため、再ログインしてください。');
-                    location.reload();
-                }
-            } else {
-                alert('保存エラー: ' + result.message);
-            }
-        } catch (error) {
-            alert('通信エラーが発生しました。');
+    // メール・PWの個別保存
+    async function saveIndividual(type) {
+        const payload = { pw: currentToken, classes: currentConfig.classes, dates: currentConfig.dates, timeSlots: currentConfig.timeSlots, lunchTimes: currentConfig.lunchTimes };
+        if(type === 'email') {
+            payload.adminEmail = document.getElementById('adminEmail').value;
+        } else if(type === 'pw') {
+            const newPw = document.getElementById('adminPassword').value;
+            if(!newPw) return alert('新しいパスワードを入力してください');
+            payload.adminPassword = newPw;
         }
+
+        if(await sendToServer(payload)) {
+            alert('更新しました。');
+            if(type === 'pw') location.reload();
+        }
+    }
+
+    // 全マスター設定の一括保存
+    async function saveAllMaster() {
+        const payload = {
+            pw: currentToken,
+            adminEmail: document.getElementById('adminEmail').value,
+            classes: currentConfig.classes,
+            dates: currentConfig.dates,
+            timeSlots: currentConfig.timeSlots,
+            lunchTimes: currentConfig.lunchTimes
+        };
+        if(await sendToServer(payload)) {
+            alert('すべてのマスター設定を保存・確定しました！');
+        }
+    }
+
+    async function sendToServer(payload) {
+        try {
+            const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "saveSettings", data: payload }) });
+            const result = await response.json();
+            if (result.status === 'success') return true;
+            alert('エラー: ' + result.message);
+        } catch (error) { alert('通信エラー'); }
+        return false;
     }
 </script>
 </body>
