@@ -154,7 +154,6 @@
 
     let serverData = { dates: [], times: [], classes: [], maxCapacity: 2, deadlineMode: 'days', deadlineDays: 0, deadlineValue: '', adminEmail: '', adminPassword: 'admin123', reservations: [] };
 
-    // 👁️ パスワードの切り替え処理
     function togglePasswordVisibility(inputId, iconId) {
         const input = document.getElementById(inputId);
         const icon = document.getElementById(iconId);
@@ -214,7 +213,6 @@
     async function loadData() {
         showStatus("データを読み込み中...");
         try {
-            // mode=admin_fetch に統一して確実にGASからデータを引っ張る
             const res = await fetch(APP_URL + "?mode=admin_fetch&t=" + Date.now());
             serverData = await res.json();
             
@@ -224,7 +222,10 @@
             document.getElementById('deadlineDays').value = serverData.deadlineDays || 0;
             document.getElementById('deadlineValue').value = serverData.deadlineValue || "";
             document.getElementById('adminEmailInput').value = serverData.adminEmail || "";
-            document.getElementById('adminPwInput').value = serverData.adminPassword || "admin123";
+            
+            // 読み込み時は入力欄の初期値を空にし、プレースホルダーとして現在のPWを表示
+            document.getElementById('adminPwInput').value = "";
+            document.getElementById('adminPwInput').placeholder = "設定中のパスワード: " + serverData.adminPassword;
             
             toggleDeadlineInput(); renderSettings(); renderReservations(); showStatus("");
         } catch(e) {
@@ -241,9 +242,11 @@
         } catch(e) { alert('メールアドレスを変更しました。'); loadData(); }
     }
 
+    // ★ 修正箇所：正しく入力された文字を取得して送信するよう修正
     async function saveAdminPassword() {
         const pw = document.getElementById('adminPwInput').value.trim();
-        if(!pw) return; showStatus("パスワード変更中...");
+        if(!pw) { alert('新しいパスワードを入力してください。'); return; }
+        showStatus("パスワード変更中...");
         try {
             await fetch(APP_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', newPassword: pw }) });
             alert('パスワードを変更しました。次回のログインから有効になります。'); loadData();
@@ -315,7 +318,6 @@
 
     function showStatus(msg) { const div = document.getElementById('status'); if(!msg) { div.classList.add('d-none'); return; } div.textContent = msg; div.classList.remove('d-none'); }
 
-    // 初期起動時に確実に一度データをロードしておく
     window.addEventListener('DOMContentLoaded', async () => {
         try { const res = await fetch(APP_URL + "?mode=admin_fetch&t=" + Date.now()); serverData = await res.json(); } catch(e){}
     });
