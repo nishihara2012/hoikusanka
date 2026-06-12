@@ -32,6 +32,9 @@
         .b-table th, .b-table td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; }
         .b-table th { background-color: #f4f6f7; }
         .sch-card { background: #edf2f7; border: 1px solid #cbd5e0; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+        .tab-group { display: flex; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e0; padding-bottom: 8px; }
+        .tab-btn { background: #e2e8f0; color: #4a5568; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .tab-btn.active { background: #3182ce; color: white; }
         @media print {
             body { background: white; padding: 0; }
             .no-print, .left-col, .btn, h2 { display: none !important; }
@@ -62,30 +65,34 @@
             <button class="btn btn-sm btn-danger" onclick="logout()">ログアウト</button>
         </div>
 
-        <div class="section-block" style="background: #fff5f5; border: 1px solid #feb2b2;">
-            <h3>⏰ 予約締め切り設定</h3>
-            <div class="form-group">
-                <label>① ○日前締切設定</label>
-                <div class="flex-input">
-                    希望日の <input type="number" id="deadlineDays" style="width: 70px;" min="0"> 日前に自動締切
-                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">保存</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>② 日時指定で一括締め切り</label>
-                <div class="flex-input">
-                    <input type="datetime-local" id="forceDeadlineDatetime" style="flex:1;">
-                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">一括締切を適用</button>
-                </div>
-            </div>
+        <div class="section-block" style="border-left: 4px solid #4a5568;">
+            <div class="header-flex"><h3>🏢 クラス設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('classes')">一括削除</button></div>
+            <div class="flex-input"><input type="text" id="newClass" placeholder="例：ひよこ組" style="flex:1"><button class="btn btn-sm" onclick="addMaster('classes', 'newClass')">追加</button></div>
+            <div class="item-list" id="listClasses"></div>
         </div>
 
         <div class="section-block" style="border-left: 4px solid #3182ce;">
             <div class="header-flex"><h3>📅 希望日の選択肢 設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">一括削除</button></div>
-            <div class="flex-input">
-                <input type="date" id="newMasterDate" style="flex:1;">
-                <button class="btn btn-sm" onclick="addMasterDate()">選択肢に追加</button>
+            
+            <div class="tab-group">
+                <button id="tabSingle" class="tab-btn active" onclick="switchDateMode('single')">個別設定（1日ずつ）</button>
+                <button id="tabRange" class="tab-btn" onclick="switchDateMode('range')">◯日〜◯日設定（期間）</button>
             </div>
+
+            <div id="dateSingleForm" class="flex-input">
+                <input type="date" id="newMasterDate" style="flex:1;">
+                <button class="btn btn-sm" onclick="addMasterDateSingle()">選択肢に追加</button>
+            </div>
+
+            <div id="dateRangeForm" style="display:none; margin-bottom: 10px;">
+                <div class="flex-input">
+                    <input type="date" id="newMasterDateStart" style="flex:1;">
+                    <span>〜</span>
+                    <input type="date" id="newMasterDateEnd" style="flex:1;">
+                </div>
+                <button class="btn btn-sm" style="width:100%;" onclick="addMasterDateRange()">指定期間をすべて選択肢に追加</button>
+            </div>
+
             <div class="item-list" id="listAvailableDates"></div>
         </div>
 
@@ -102,12 +109,6 @@
             <div class="header-flex"><h3>給食試食を表示する時間帯設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('lunchTimes')">一括削除</button></div>
             <div class="flex-input"><input type="text" id="newLunchTime" placeholder="例：09:30-13:00" style="flex:1"><button class="btn btn-sm" onclick="addMaster('lunchTimes', 'newLunchTime')">追加</button></div>
             <div class="item-list" id="listLunchTimes"></div>
-        </div>
-
-        <div class="section-block">
-            <div class="header-flex"><h3>クラス設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('classes')">一括削除</button></div>
-            <div class="flex-input"><input type="text" id="newClass" placeholder="例：ひよこ組" style="flex:1"><button class="btn btn-sm" onclick="addMaster('classes', 'newClass')">追加</button></div>
-            <div class="item-list" id="listClasses"></div>
         </div>
 
         <div class="section-block" style="background:#f7fafc; border: 1px solid #cbd5e0;">
@@ -129,7 +130,25 @@
             </div>
 
             <h4 style="margin: 15px 0 5px 0; color:#4a5568;">現在受付中の日時・枠数リスト</h4>
-            <div id="scheduleContainer" style="max-height:200px; overflow-y:auto;"></div>
+            <div id="scheduleContainer" style="max-height:180px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="section-block" style="background: #fff5f5; border: 1px solid #feb2b2;">
+            <h3>⏰ 予約締め切り設定</h3>
+            <div class="form-group">
+                <label>① ○日前締切設定</label>
+                <div class="flex-input">
+                    希望日の <input type="number" id="deadlineDays" style="width: 70px;" min="0"> 日前に自動締切
+                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">保存</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>② 日時指定で一括締め切り</label>
+                <div class="flex-input">
+                    <input type="datetime-local" id="forceDeadlineDatetime" style="flex:1;">
+                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">一括締切を適用</button>
+                </div>
+            </div>
         </div>
 
         <div class="section-block">
@@ -280,17 +299,64 @@
         });
     }
 
-    // 日付マスター追加専用処理 (yyyy/MM/ddに整形)
-    async function addMasterDate() {
+    // 希望日の個別/期間切り替え処理
+    function switchDateMode(mode) {
+        document.getElementById('tabSingle').classList.toggle('active', mode === 'single');
+        document.getElementById('tabRange').classList.toggle('active', mode === 'range');
+        document.getElementById('dateSingleForm').style.display = (mode === 'single') ? 'flex' : 'none';
+        document.getElementById('dateRangeForm').style.display = (mode === 'range') ? 'block' : 'none';
+    }
+
+    // 希望日：個別追加
+    async function addMasterDateSingle() {
         const input = document.getElementById('newMasterDate'); if(!input.value) return;
         const formattedDate = input.value.replace(/-/g, '/');
+        if(state.availableDates.includes(formattedDate)) return alert('その日付は既に登録されています。');
+        
         state.availableDates.push(formattedDate);
         state.availableDates.sort();
         if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; renderAll(); }
     }
 
+    // 希望日：期間一括追加（◯日〜◯日設定）
+    async function addMasterDateRange() {
+        const startInput = document.getElementById('newMasterDateStart').value;
+        const endInput = document.getElementById('newMasterDateEnd').value;
+        if(!startInput || !endInput) return alert('開始日と終了日の両方を選択してください。');
+
+        let start = new Date(startInput);
+        let end = new Date(endInput);
+        if(start > end) return alert('開始日が終了日より後の日付になっています。');
+
+        let current = new Date(start);
+        let addedCount = 0;
+        while(current <= end) {
+            let y = current.getFullYear();
+            let m = ('0' + (current.getMonth() + 1)).slice(-2);
+            let d = ('0' + current.getDate()).slice(-2);
+            let formattedStr = `${y}/${m}/${d}`;
+            
+            if(!state.availableDates.includes(formattedStr)) {
+                state.availableDates.push(formattedStr);
+                addedCount++;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+
+        if(addedCount === 0) return alert('指定された期間の日付はすべて登録済みです。');
+        state.availableDates.sort();
+
+        if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) {
+            document.getElementById('newMasterDateStart').value = '';
+            document.getElementById('newMasterDateEnd').value = '';
+            renderAll();
+            alert(`${addedCount}件の日付を新しく登録肢に追加しました！`);
+        }
+    }
+
     async function addMaster(key, inputId) {
         const input = document.getElementById(inputId); const val = input.value.trim(); if(!val) return;
+        if(state[key].includes(val)) return alert('既に登録されています。');
         state[key].push(val);
         if(await sendAction("updateMaster", { key: key, list: state[key] })) { input.value = ''; renderAll(); }
     }
