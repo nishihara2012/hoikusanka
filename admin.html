@@ -194,7 +194,7 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyvHbMurDE1IsQyxXUfL4LD2l1jgmr2jMZIXBobpTkGaQX4A3SbyPD1FDP6_TzhhdDl/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyvHbMurDE1IsQyxXUfL4LD2l1jgmr2jMZIXBobpTkGaQX4A3SbyPD1FDP6_TzhhdDl/execv";
     let currentToken = "";
     let state = { classes: [], lunchTimes: [], availableDates: [], availableTimes: [], schedules: [], bookings: [] };
 
@@ -211,17 +211,6 @@
         }
         sessionStorage.clear();
     });
-
-    // 日付表記を yyyy/MM/dd 形式に安全に美しく変換する関数
-    function formatDateString(rawDateStr) {
-        if (!rawDateStr) return "";
-        const d = new Date(rawDateStr);
-        if (isNaN(d.getTime())) return rawDateStr; // すでに文字列の場合はそのまま返す
-        const y = d.getFullYear();
-        const m = ('0' + (d.getMonth() + 1)).slice(-2);
-        const day = ('0' + d.getDate()).slice(-2);
-        return `${y}/${m}/${d}`;
-    }
 
     async function login(pw) {
         if(!pw) return alert('パスワードを入力してください');
@@ -271,9 +260,8 @@
         state[key].forEach((item, index) => {
             const tag = document.createElement('div');
             tag.className = 'item-tag';
-            // 日付マスタータグ用の表示形式整形
-            const dispItem = (key === 'availableDates') ? formatDateString(item) : item;
-            tag.innerHTML = `${dispItem} <button class="btn btn-danger btn-sm" style="border-radius:50%; padding:0px 5px; margin-left:6px;" onclick="deleteMaster('${key}', ${index})">×</button>`;
+            // 🌟 GASから届いた文字列を、そのまま無加工で100%出力
+            tag.innerHTML = `${item} <button class="btn btn-danger btn-sm" style="border-radius:50%; padding:0px 5px; margin-left:6px;" onclick="deleteMaster('${key}', ${index})">×</button>`;
             container.appendChild(tag);
         });
     }
@@ -283,11 +271,12 @@
         container.innerHTML = '';
         if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">希望日・時間帯・クラスを設定すると自動生成されます。</div>'; return; }
         
-        state.schedules.sort((a,b) => (formatDateString(a.date) + a.time_slot + a.target_class).localeCompare(formatDateString(b.date) + b.time_slot + b.target_class));
+        // 🌟 英語オブジェクトへの変換を一切やめ、プレーンな文字列として綺麗に並び替える
+        state.schedules.sort((a,b) => (a.date + a.time_slot + a.target_class).localeCompare(b.date + b.time_slot + b.target_class));
         state.schedules.forEach(s => {
             const card = document.createElement('div');
             card.className = 'sch-card header-flex';
-            card.innerHTML = `<div><strong>${formatDateString(s.date)}</strong> | ${s.time_slot} | <span style="color:#3182ce;font-weight:bold;">${s.target_class}</span> (定員:${s.capacity} / 予約:${s.reserved_count})</div>
+            card.innerHTML = `<div><strong>${s.date}</strong> | ${s.time_slot} | <span style="color:#3182ce;font-weight:bold;">${s.target_class}</span> (定員:${s.capacity} / 予約:${s.reserved_count})</div>
                 <span style="font-size:11px; color:#2ecc71; font-weight:bold;">● 連動中</span>`;
             container.appendChild(card);
         });
@@ -297,13 +286,13 @@
         const tbody = document.getElementById('bookingTableBody'); tbody.innerHTML = '';
         if(state.bookings.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>'; return; }
         
-        // 🌟 英語表記の日付を yyyy/MM/dd に揃えてソート
-        state.bookings.sort((a, b) => (formatDateString(a.date) + a.timeSlot).localeCompare(formatDateString(b.date) + b.timeSlot));
+        // 🌟 予約リストもプレーンな文字列同士で綺麗にソート
+        state.bookings.sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot));
 
         state.bookings.forEach(b => {
             const row = document.createElement('tr');
-            // 🌟 予約一覧テーブル内の表示日付を綺麗なフォーマットに変換
-            row.innerHTML = `<td>${formatDateString(b.date)}</td><td>${b.timeSlot}</td><td style="font-weight:bold;color:#2c3e50;">${b.childClass}</td><td>${b.childName}</td><td>${b.lunchNeeded}</td><td>${b.email}</td>
+            // 🌟 届いた文字列日付（yyyy/MM/dd）をそのままストレートに画面に差し込む
+            row.innerHTML = `<td>${b.date}</td><td>${b.timeSlot}</td><td style="font-weight:bold;color:#2c3e50;">${b.childClass}</td><td>${b.childName}</td><td>${b.lunchNeeded}</td><td>${b.email}</td>
                 <td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteBookingFromServer('${b.id}')">削除</button></td>`;
             tbody.appendChild(row);
         });
