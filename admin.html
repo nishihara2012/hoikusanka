@@ -3,383 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>保育参加 システム管理画面</title>
+    <title>【管理】西原りとるぱんぷきんず・保育参加システム</title>
     <style>
-        body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto 20px auto; background: #fff; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .top-bar h1 { margin: 0; font-size: 22px; color: #2c3e50; }
-        .admin-wrapper { display: flex; gap: 25px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
-        .sidebar { flex: 1; min-width: 450px; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-height: 90vh; overflow-y: auto; }
-        .main-content { flex: 1.2; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        
-        h2 { font-size: 18px; border-bottom: 3px solid #4a6785; padding-bottom: 8px; color: #2c3e50; margin-top: 0; margin-bottom: 15px; }
-        .card { background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 8px; padding: 20px; margin-bottom: 25px; position: relative; }
-        
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #e6f2ff; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #0056b3; padding-bottom: 10px; color: #0056b3; margin-top: 0; }
+        .admin-layout { display: flex; gap: 30px; flex-wrap: wrap; }
+        .admin-left { flex: 1; min-width: 350px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
+        .admin-right { flex: 1.5; min-width: 450px; }
         .form-group { margin-bottom: 15px; }
-        .input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-        input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], input[type="password"], input[type="email"] { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        input[type="text"], input[type="email"] { flex: 1; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #0056b3; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%; }
+        button:hover { background: #004085; }
+        .print-btn { background: #28a745; margin-bottom: 15px; }
+        .print-btn:hover { background: #218838; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #e1ecf4; color: #333; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .hidden { display: none; }
+        .auth-container { max-width: 350px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
-        .btn { padding: 9px 18px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-add { background-color: #1a202c; color: white; }
-        .btn-submit { background-color: #2b6cb0; color: white; width: 100%; justify-content: center; padding: 12px; margin-top: 10px; }
-        .btn-save { background-color: #4CAF50; color: white; }
-        .btn-danger { background-color: #e53e3e; color: white; padding: 6px 12px; font-size: 13px; }
-        .btn-logout { background-color: #e53e3e; color: white; }
-        
-        .badge-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .badge { background: #edf2f7; border: 1px solid #cbd5e0; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; }
-        .badge .remove-icon { cursor: pointer; color: #a0aec0; }
-        .badge .remove-icon:hover { color: #e53e3e; }
-        
-        .list-box { background: #fff; border: 1px solid #cbd5e0; border-radius: 6px; max-height: 150px; overflow-y: auto; padding: 10px; margin-top: 10px; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid #edf2f7; font-size: 13px; }
-        
-        .tab-group { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #edf2f7; }
-        .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; font-size: 14px; border-radius: 6px 6px 0 0; background: #edf2f7; }
-        .tab.active { background: #2b6cb0; color: white; }
-        
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
-        th, td { border: 1px solid #e1e4e8; padding: 10px; text-align: left; font-size: 13px; }
-        th { background-color: #f7fafc; font-weight: bold; }
-        
-        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-box { background: white; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; text-align: center; }
-
-        /* 🖨️ 印刷設定：予約締切エリアも含め、一覧以外の設定要素を完全に除外 */
+        /* 印刷用設定（右画面の予約状況一覧のみを綺麗に印刷） */
         @media print {
-            body { background: white; color: #000; padding: 0; margin: 0; }
-            .top-bar, .sidebar, .btn, th:last-child, td:last-child, .print-exclude { display: none !important; }
-            .admin-wrapper { display: block; width: 100%; }
-            .main-content { border: none; box-shadow: none; padding: 0; margin: 0; width: 100%; }
-            table { width: 100%; border: 1px solid #000; font-size: 13px; page-break-inside: auto; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
-            th, td { border: 1px solid #000; padding: 8px; background: transparent !important; }
-            @page { size: A4 landscape; margin: 10mm; }
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+            th { background-color: #e1ecf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
 
-<div id="loginOverlay" class="login-overlay">
-    <div class="login-box">
-        <h3>🔑 管理者ログイン</h3>
-        <p>スプレッドシート（admin_auth）のパスワードを入力してください。</p>
-        <input type="password" id="loginPw" placeholder="パスワードを入力">
-        <button class="btn btn-save" style="width:100%; justify-content:center;" onclick="attemptLogin()">ログイン</button>
+<div id="authView" class="auth-container">
+    <h3 style="text-align:center; margin-top:0;">管理画面 ログイン</h3>
+    <div class="form-group">
+        <label for="adminPasswordInput">パスワード</label>
+        <input type="password" id="adminPasswordInput">
     </div>
+    <button onclick="checkPassword()">ログイン</button>
 </div>
 
-<div id="mainContainer" style="display: none;">
-    <div class="top-bar">
-        <h1>保育参加 設定画面</h1>
-        <button class="btn btn-logout" onclick="logout()">ログアウト</button>
-    </div>
-
-    <div class="admin-wrapper">
-        <div class="sidebar">
-            <h2>🏢 クラス設定</h2>
-            <div class="card">
-                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('classes')">一括削除</button>
-                <div class="input-row" style="margin-top: 15px;">
-                    <input type="text" id="new_class" placeholder="例：本園カモミール">
-                    <button class="btn btn-add" onclick="addMaster('classes', 'new_class')">追加</button>
-                </div>
-                <div class="badge-container" id="classes_container"></div>
+<div id="mainView" class="container hidden">
+    <h2>西原りとるぱんぷきんず 保育参加管理システム</h2>
+    <div class="admin-layout">
+        
+        <div class="admin-left">
+            <h3>システム設定</h3>
+            <div class="form-group">
+                <label>締切設定（例: 3日前 / 2026-07-01）</label>
+                <input type="text" id="cfgDeadline" placeholder="締切条件を入力">
             </div>
-
-            <h2>🍱 昼食時間設定</h2>
-            <div class="card">
-                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('lunchTimes')">一括削除</button>
-                <div class="input-row" style="margin-top: 15px;">
-                    <input type="text" id="new_lunchtime" placeholder="例：11:30-12:00">
-                    <button class="btn btn-add" onclick="addMaster('lunchTimes', 'new_lunchtime')">追加</button>
-                </div>
-                <div class="list-box" id="lunchtimes_list"></div>
+            <div class="form-group">
+                <label>クラス設定（カンマ「,」区切り）</label>
+                <input type="text" id="cfgClasses" value="ひよこ,りす,うさぎ,くま,ぞう,きりん">
             </div>
-
-            <h2>📅 希望日の設定</h2>
-            <div class="card">
-                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('dates')">一括削除</button>
-                <div class="tab-group" style="margin-top: 15px;">
-                    <div class="tab active" id="tab_individual" onclick="switchDateTab('individual')">個別追加</div>
-                    <div class="tab" id="tab_bulk" onclick="switchDateTab('bulk')">☀️ 期間一括追加</div>
-                </div>
-                <div id="date_individual_form">
-                    <div class="input-row">
-                        <input type="date" id="single_date">
-                        <button class="btn btn-add" onclick="addSingleDate()">追加</button>
-                    </div>
-                </div>
-                <div id="date_bulk_form" style="display: none;">
-                    <div class="input-row">
-                        <input type="date" id="bulk_start"> ～ <input type="date" id="bulk_end">
-                    </div>
-                    <label><input type="checkbox" id="exclude_weekends" checked> 土曜日・日曜日を除外する</label>
-                    <button class="btn btn-submit" onclick="generateBulkDates()">指定期間をすべて追加</button>
-                </div>
-                <div class="list-box" id="dates_list"></div>
+            <div class="form-group">
+                <label>希望日設定（カンマ「,」区切り）</label>
+                <input type="text" id="cfgDates" placeholder="例: 2026-07-01,2026-07-02">
             </div>
-
-            <h2>🕒 時間帯の設定</h2>
-            <div class="card">
-                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('timeSlots')">一括削除</button>
-                <div class="input-row" style="margin-top: 15px;">
-                    <input type="text" id="new_timeslot" placeholder="例：09:30-11:30">
-                    <button class="btn btn-add" onclick="addMaster('timeSlots', 'new_timeslot')">追加</button>
-                </div>
-                <div class="list-box" id="timeslots_list"></div>
+            <div class="form-group">
+                <label>時間設定（カンマ「,」区切り）</label>
+                <input type="text" id="cfgTimes" value="09:00-11:00,11:00-13:00">
             </div>
-
-            <h2>👥 定員数の一括設定</h2>
-            <div class="card">
-                <div class="form-group">
-                    <label>すべての予約枠の定員数を一括で変更します</label>
-                    <div style="margin-top:10px;"><input type="number" id="bulk_capacity" min="1" style="width:80px;"> 名</div>
-                </div>
-                <button class="btn btn-submit" onclick="updateBulkCapacity()">定員を一括変更する</button>
+            <div class="form-group">
+                <label>昼食時間設定（上記時間帯と完全一致で表示）</label>
+                <input type="text" id="cfgLunchTime" value="11:00-13:00">
             </div>
-
-            <h2>⚙️ システム設定</h2>
-            <div class="card">
-                <div class="form-group" style="border-bottom:1px solid #edf2f7; padding-bottom:15px;">
-                    <label>✉️ 管理者通知先メールアドレスの変更</label>
-                    <div class="input-row"><input type="email" id="admin_email_val"><button class="btn btn-save" onclick="saveAdminEmailConfig()">変更保存</button></div>
-                </div>
-                <div class="form-group" style="margin-top:15px;">
-                    <label>🔑 管理者パスワードの変更</label>
-                    <div class="input-row"><input type="password" id="new_pass_val"><button class="btn btn-save" onclick="changeAdminPassword()">パスワード変更</button></div>
-                </div>
+            <div class="form-group">
+                <label>定員数設定（1枠あたりの上限組数）</label>
+                <input type="number" id="cfgLimit" value="3">
             </div>
+            <div class="form-group">
+                <label>管理者通知先メールアドレス</label>
+                <input type="email" id="cfgAdminEmail" placeholder="園のメールアドレス">
+            </div>
+            <div class="form-group">
+                <label>管理画面パスワード変更</label>
+                <input type="password" id="cfgPassword" value="1234">
+            </div>
+            <button onclick="saveSettings()" id="saveBtn">設定を一括保存する</button>
         </div>
-
-        <div class="main-content">
-            <h2>👥 現在の予約状況一覧（クラス指定順ソート）</h2>
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px;">
-                <button class="btn btn-save" style="background-color: #2b6cb0;" onclick="window.print()">🖨️ 印刷する</button>
-                <button class="btn btn-danger" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
-            </div>
+        
+        <div class="admin-right">
+            <h3>予約状況一覧</h3>
+            <button class="print-btn" onclick="window.print()">予約状況一覧のみ印刷する</button>
             
-            <table id="bookingsTable">
-                <thead>
-                    <tr>
-                        <th>クラス</th>
-                        <th>希望日</th>
-                        <th>時間帯</th>
-                        <th>園児氏名</th>
-                        <th>給食試食</th>
-                        <th>メールアドレス</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-
-            <div class="print-exclude">
-                <br><br>
-                <h2>⏱️ 予約締切の設定</h2>
-                <div class="card">
-                    <div class="form-group">
-                        <label><strong>① ✕日前締切設定</strong></label>
-                        <div style="margin-top:5px;"><input type="number" id="deadline_days" min="0" style="width:80px;"> 日前</div>
-                    </div>
-                    <div class="form-group">
-                        <label><strong>② 一括受付終了日時</strong></label>
-                        <div style="margin-top:5px;"><input type="datetime-local" id="force_deadline_datetime"></div>
-                    </div>
-                    <button class="btn btn-save" onclick="saveDeadlineSetting()">設定を保存</button>
-                </div>
+            <div id="printArea">
+                <table id="reservationTable">
+                    <thead>
+                        <tr>
+                            <th>クラス</th>
+                            <th>希望日</th>
+                            <th>時間帯</th>
+                            <th>園児氏名</th>
+                            <th>昼食</th>
+                            <th>保護者メール</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzlQuA8aLxzDuysyAxCPwTEo-w7ZyYdKGDXoa4a72qV0pV75-UsQTLRJXOScRO6UeH1/exec";
-    let adminToken = "";
-    let activeDateTab = "individual";
+    // ⚠️【差し替え】index.htmlと同じGASのウェブアプリURLを貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxthf1gX82T3s9lOwl_Xc9RFdISH16-_JP2HUboCaEB68bznKsI-KzrGBmvwXUUtYoE/exec";
+    let systemConfig = {};
 
-    window.onload = function() {
-        const savedToken = sessionStorage.getItem('adminToken');
-        if (savedToken) { adminToken = savedToken; loadAdminSystemData(); }
-    };
+    // 最初にスプレッドシートから現在の設定と予約状況データをまとめて取得
+    async function loadAdminData() {
+        try {
+            const response = await fetch(GAS_URL);
+            const data = await response.json();
+            systemConfig = data.config || {};
+            
+            // 取得した設定値を入力欄に反映
+            if(systemConfig.password) {
+                document.getElementById('cfgDeadline').value = systemConfig.deadline || '';
+                document.getElementById('cfgClasses').value = systemConfig.classes || '';
+                document.getElementById('cfgDates').value = systemConfig.dates || '';
+                document.getElementById('cfgTimes').value = systemConfig.times || '';
+                document.getElementById('cfgLunchTime').value = systemConfig.lunchTime || '';
+                document.getElementById('cfgLimit').value = systemConfig.limit || 3;
+                document.getElementById('cfgAdminEmail').value = systemConfig.adminEmail || '';
+                document.getElementById('cfgPassword').value = systemConfig.password || '1234';
+            }
 
-    function attemptLogin() {
-        const pw = document.getElementById('loginPw').value.trim();
-        if (!pw) return;
-        fetch(`${GAS_URL}?action=adminLogin&pw=${encodeURIComponent(pw)}`)
-        .then(res => res.json())
-        .then(result => {
-            if (result.status === 'success') {
-                adminToken = pw;
-                sessionStorage.setItem('adminToken', pw);
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-                renderSystemConfig(result.config);
-            } else { alert("パスワードが違います"); }
-        }).catch(err => alert("通信エラー: " + err));
-    }
-
-    function loadAdminSystemData() {
-        fetch(`${GAS_URL}?action=adminLogin&pw=${encodeURIComponent(adminToken)}`)
-        .then(res => res.json())
-        .then(result => {
-            if (result.status === 'success') {
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-                renderSystemConfig(result.config);
-            } else { logout(); }
-        });
-    }
-
-    function renderSystemConfig(config) {
-        if (!config) return;
-
-        // クラスバッジ
-        const classesCont = document.getElementById('classes_container');
-        classesCont.innerHTML = "";
-        (config.classes || []).forEach(c => {
-            classesCont.innerHTML += `<span class="badge">${c} <span class="remove-icon" onclick="removeMasterItem('classes', '${c}')">×</span></span>`;
-        });
-
-        // 昼食時間リスト
-        const lunchList = document.getElementById('lunchtimes_list');
-        lunchList.innerHTML = "";
-        (config.lunchTimes || []).forEach(l => {
-            lunchList.innerHTML += `<div class="list-item"><span>${l}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('lunchTimes', '${l}')">削除</button></div>`;
-        });
-
-        // 希望日リスト
-        const datesList = document.getElementById('dates_list');
-        datesList.innerHTML = "";
-        (config.dates || []).forEach(d => {
-            datesList.innerHTML += `<div class="list-item"><span>${d}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('dates', '${d}')">削除</button></div>`;
-        });
-
-        // 時間帯リスト
-        const slotsList = document.getElementById('timeslots_list');
-        slotsList.innerHTML = "";
-        (config.timeSlots || []).forEach(s => {
-            slotsList.innerHTML += `<div class="list-item"><span>${s}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('timeSlots', '${s}')">削除</button></div>`;
-        });
-
-        document.getElementById('deadline_days').value = config.deadlineDays || 0;
-        document.getElementById('force_deadline_datetime').value = config.forceDeadlineDatetime || "";
-        document.getElementById('bulk_capacity').value = config.defaultCapacity || 2;
-        document.getElementById('admin_email_val').value = config.adminEmail || "";
-
-        // 予約一覧の描画（クラス指定順 ➔ 早い時間順ソート）
-        const tbody = document.querySelector('#bookingsTable tbody');
-        tbody.innerHTML = "";
-        let bookingsList = config.bookings || [];
-
-        if (bookingsList.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">現在、予約はありません。</td></tr>`;
-        } else {
-            const classOrder = ["本園カモミール", "ANNEXカモミール", "メリッサ", "本園マジョラム", "ANNEXマジョラム"];
-            bookingsList.sort((a, b) => {
-                let idxA = classOrder.indexOf(a.childClass);
-                let idxB = classOrder.indexOf(b.childClass);
-                if (idxA === -1) idxA = 999;
-                if (idxB === -1) idxB = 999;
-                
-                if (idxA !== idxB) return idxA - idxB;
-                if (a.date !== b.date) return a.date.localeCompare(b.date);
-                return a.timeSlot.localeCompare(b.timeSlot);
-            });
-
-            bookingsList.forEach(b => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${b.childClass}</strong></td>
-                        <td>${b.date}</td>
-                        <td>${b.timeSlot}</td>
-                        <td>${b.childName}</td>
-                        <td>${b.lunchNeeded}</td>
-                        <td>${b.email || 'なし'}</td>
-                        <td><button class="btn btn-danger" onclick="deleteBooking('${b.id}')">削除</button></td>
-                    </tr>
-                `;
-            });
+            // 予約状況一覧テーブルの描画（クラス、希望日、時間の順にソート済み）
+            const tbody = document.querySelector('#reservationTable tbody');
+            tbody.innerHTML = '';
+            if(data.reservations && data.reservations.length > 0) {
+                data.reservations.forEach(res => {
+                    let row = `<tr>
+                        <td>${res.className}</td>
+                        <td>${res.date}</td>
+                        <td>${res.timeSlot}</td>
+                        <td>${res.childName}</td>
+                        <td>${res.lunch}</td>
+                        <td>${res.email}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">現在、予約はありません。</td></tr>';
+            }
+        } catch (error) {
+            console.error(error);
+            alert("データの取得に失敗しました。");
         }
     }
 
-    function addMaster(type, inputId) {
-        const val = document.getElementById(inputId).value.trim();
-        if(!val) return;
-        sendPostAction("addMasterItem", { type: type, value: val }, "追加しました。");
-        document.getElementById(inputId).value = "";
-    }
-    function removeMasterItem(type, val) {
-        if(!confirm(`「${val}」を削除しますか？`)) return;
-        sendPostAction("removeMasterItem", { type: type, value: val }, "削除しました。");
-    }
-    function clearMaster(type) {
-        if(!confirm("一括削除しますか？")) return;
-        sendPostAction("clearMaster", { type: type }, "削除しました。");
-    }
-    function addSingleDate() {
-        const d = document.getElementById('single_date').value;
-        if(!d) return;
-        sendPostAction("addMasterItem", { type: "dates", value: d }, "追加しました。");
-    }
-    function generateBulkDates() {
-        const start = document.getElementById('bulk_start').value;
-        const end = document.getElementById('bulk_end').value;
-        const skipWeekends = document.getElementById('exclude_weekends').checked;
-        if(!start || !end) return;
-        sendPostAction("generateBulkDates", { startDate: start, endDate: end, excludeWeekends: skipWeekends }, "期間追加しました。");
-    }
-    function updateBulkCapacity() {
-        const cap = document.getElementById('bulk_capacity').value;
-        sendPostAction("updateBulkCapacity", { capacity: Number(cap) }, "定員を一括上書きしました。");
-    }
-    function saveDeadlineSetting() {
-        const days = document.getElementById('deadline_days').value;
-        const datetime = document.getElementById('force_deadline_datetime').value;
-        sendPostAction("saveDeadlineConfig", { deadlineDays: Number(days), forceDeadlineDatetime: datetime }, "締切を保存しました。");
-    }
-    function saveAdminEmailConfig() {
-        const email = document.getElementById('admin_email_val').value.trim();
-        sendPostAction("saveAdminEmailConfig", { adminEmail: email }, "メールアドレスを保存しました。");
-    }
-    function changeAdminPassword() {
-        const newPw = document.getElementById('new_pass_val').value.trim();
-        sendPostAction("changeAdminPassword", { newPassword: newPw }, "パスワードを変更しました。");
-        document.getElementById('new_pass_val').value = "";
-    }
-    function deleteBooking(id) {
-        if (!confirm("予約を削除しますか？")) return;
-        sendPostAction("deleteBooking", { bookingId: id }, "削除しました。");
-    }
-    function clearAllBookings() {
-        if (!confirm("全ての予約を完全削除しますか？")) return;
-        sendPostAction("clearAllBookings", {}, "クリアしました。");
+    // パスワード認証
+    function checkPassword() {
+        const input = document.getElementById('adminPasswordInput').value;
+        const correctPassword = systemConfig.password || "1234"; // 初期状態は1234
+        
+        if(input === correctPassword) {
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+        } else {
+            alert('パスワードが正しくありません。');
+        }
     }
 
-    function sendPostAction(actionName, dataObj, successMessage) {
-        fetch(GAS_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: actionName, token: adminToken, data: dataObj })
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (res.status === 'success') {
-                if(successMessage) alert(successMessage);
-                loadAdminSystemData();
-            } else { alert("エラー: " + res.message); }
-        }).catch(err => alert("通信エラー: " + err));
+    // 設定の一括保存処理
+    async function saveSettings() {
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerText = "保存中...";
+
+        const payload = {
+            type: "admin_save",
+            deadline: document.getElementById('cfgDeadline').value,
+            classes: document.getElementById('cfgClasses').value,
+            dates: document.getElementById('cfgDates').value,
+            times: document.getElementById('cfgTimes').value,
+            lunchTime: document.getElementById('cfgLunchTime').value,
+            limit: document.getElementById('cfgLimit').value,
+            adminEmail: document.getElementById('cfgAdminEmail').value,
+            password: document.getElementById('cfgPassword').value
+        };
+
+        try {
+            const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const res = await response.json();
+            alert(res.message);
+            location.reload(); // 最新情報を再読み込み
+        } catch (error) {
+            alert("設定の保存に失敗しました。");
+            saveBtn.disabled = false;
+            saveBtn.innerText = "設定を一括保存する";
+        }
     }
 
-    function switchDateTab(tabName) {
-        activeDateTab = tabName;
-        document.getElementById('tab_individual').className = tabName === 'individual' ? 'tab active' : 'tab';
-        document.getElementById('tab_bulk').className = tabName === 'bulk' ? 'tab active' : 'tab';
-        document.getElementById('date_individual_form').style.display = tabName === 'individual' ? 'block' : 'none';
-        document.getElementById('date_bulk_form').style.display = tabName === 'bulk' ? 'none' : 'block';
-    }
-    function logout() { sessionStorage.removeItem('adminToken'); location.reload(); }
+    // 起動時にデータを先読み
+    window.onload = loadAdminData;
 </script>
 </body>
 </html>
