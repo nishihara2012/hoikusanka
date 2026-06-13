@@ -3,393 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>保育参加 システム管理画面</title>
+    <title>保育参加 管理画面</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; }
-        .main-layout { display: flex; gap: 25px; max-width: 1400px; margin: 0 auto; }
-        .left-col { flex: 1; min-width: 480px; max-height: 90vh; overflow-y: auto; padding-right: 10px; }
-        .right-col { flex: 1.3; min-width: 550px; }
-        .container { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        h2, h3 { color: #2c3e50; border-bottom: 2px solid #34495e; padding-bottom: 6px; margin-top: 0; }
+        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { border-bottom: 2px solid #4a6785; padding-bottom: 10px; color: #2c3e50; display: flex; align-items: center; gap: 10px; }
+        .card { background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 6px; padding: 20px; margin-bottom: 25px; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 6px; color: #555; font-size: 14px; }
-        input[type="text"], input[type="password"], input[type="email"], input[type="date"], input[type="number"], input[type="datetime-local"], select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .btn { background-color: #34495e; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .btn:hover { background-color: #2c3e50; }
-        .btn-danger { background-color: #e74c3c; }
-        .btn-danger:hover { background-color: #c0392b; }
-        .btn-success { background-color: #2ecc71; }
-        .btn-success:hover { background-color: #27ae60; }
-        .btn-sm { padding: 4px 8px; font-size: 12px; }
-        #loginSection { max-width: 400px; margin: 100px auto; }
-        #adminContent { display: none; }
-        .section-block { background: #fafafa; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .flex-input { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-        .item-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 120px; overflow-y: auto; padding: 4px; background: #fff; border: 1px solid #edf2f7; border-radius: 6px; }
-        .item-tag { background: #e2e8f0; padding: 4px 10px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; }
-        .header-flex { display: flex; justify-content: space-between; align-items: center; }
-        .b-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
-        .b-table th, .b-table td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; }
-        .b-table th { background-color: #f4f6f7; }
-        .sch-card { background: #edf2f7; border: 1px solid #cbd5e0; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
-        .tab-group { display: flex; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e0; padding-bottom: 8px; }
-        .tab-btn { background: #e2e8f0; color: #4a5568; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
-        .tab-btn.active { background: #3182ce; color: white; }
-        .bulk-edit-box { background: #fffaf0; border: 1px dashed #dd6b20; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
-        @media print {
-            body { background: white; padding: 0; }
-            .no-print, .left-col, .btn, h2 { display: none !important; }
-            .right-col { width: 100%; }
-            .container { box-shadow: none; padding: 0; }
-            .print-title { display: block !important; font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 20px; }
-        }
-        .print-title { display: none; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #4a5568; }
+        input[type="number"], input[type="datetime-local"], input[type="password"] { width: 100%; max-width: 300px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn-primary { background-color: #4CAF50; color: white; }
+        .btn-primary:hover { background-color: #45a049; }
+        .btn-danger { background-color: #f44336; color: white; }
+        .btn-danger:hover { background-color: #da190b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { border: 1px solid #e1e4e8; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; color: #4a5568; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: white; padding: 4px 30px 30px 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .login-box h3 { margin-bottom: 20px; color: #2c3e50; }
+        .login-box input { width: 80%; padding: 10px; margin-bottom: 20px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; }
     </style>
 </head>
 <body>
 
-<div id="loginSection" class="container">
-    <h2>管理者ログイン</h2>
-    <div id="loginLoading" style="display:none; color:#e67e22; font-weight:bold; margin-bottom:10px;">自動ログイン認証中...</div>
-    <div class="form-group">
-        <label>管理パスワード</label>
-        <input type="password" id="loginPw" style="width:100%" placeholder="パスワードを入力">
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+        <h3>🔑 管理者ログイン</h3>
+        <p>スプレッドシートに設定されているパスワードを入力してください。</p>
+        <input type="password" id="loginPw" placeholder="パスワードを入力">
+        <br>
+        <button class="btn-primary" onclick="attemptLogin()">ログイン</button>
     </div>
-    <button class="btn" onclick="login(document.getElementById('loginPw').value)">ログイン</button>
 </div>
 
-<div id="adminContent" class="main-layout">
-    <div class="left-col no-print">
-        <div class="header-flex">
-            <h2>保育参加 設定画面</h2>
-            <button class="btn btn-sm btn-danger" onclick="logout()">ログアウト</button>
-        </div>
-
-        <div class="section-block" style="border-left: 4px solid #4a5568;">
-            <div class="header-flex"><h3>🏢 クラス設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('classes')">一括削除</button></div>
-            <div class="flex-input"><input type="text" id="newClass" placeholder="例：ひよこ組" style="flex:1"><button class="btn btn-sm" onclick="addMaster('classes', 'newClass')">追加</button></div>
-            <div class="item-list" id="listClasses"></div>
-        </div>
-
-        <div class="section-block" style="border-left: 4px solid #3182ce;">
-            <div class="header-flex"><h3>📅 希望日の設定（各クラス連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">全希望日を一括削除</button></div>
-            <div class="tab-group">
-                <button id="tabSingle" class="tab-btn active" onclick="switchDateMode('single')">個別追加</button>
-                <button id="tabRange" class="tab-btn" onclick="switchDateMode('range')">🌟 期間一括追加</button>
-            </div>
-            <div id="dateSingleForm" class="flex-input">
-                <input type="date" id="newMasterDate" style="flex:1;">
-                <button class="btn btn-sm" onclick="addMasterDateSingle()">追加</button>
-            </div>
-            <div id="dateRangeForm" style="display:none; margin-bottom: 10px;">
-                <div class="flex-input">
-                    <input type="date" id="newMasterDateStart" style="flex:1;">
-                    <span>〜</span>
-                    <input type="date" id="newMasterDateEnd" style="flex:1;">
-                </div>
-                <label style="margin-bottom:6px; font-weight:normal; color:#e53e3e;">
-                    <input type="checkbox" id="schExcludeWeekend" checked> 土曜日・日曜日を除外する
-                </label>
-                <button class="btn btn-sm" style="width:100%; margin-top:5px;" onclick="addMasterDateRange()">指定期間をすべて追加</button>
-            </div>
-            <div class="item-list" id="listAvailableDates"></div>
-        </div>
-
-        <div class="section-block" style="border-left: 4px solid #319795;">
-            <div class="header-flex"><h3>🕒 時間帯の設定（各クラス連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableTimes')">全時間帯を一括削除</button></div>
-            <div class="flex-input">
-                <input type="text" id="newMasterTime" placeholder="例：09:30-11:30" style="flex:1;">
-                <button class="btn btn-sm" onclick="addMaster('availableTimes', 'newMasterTime')">追加</button>
-            </div>
-            <div class="item-list" id="listAvailableTimes"></div>
-        </div>
-
-        <div class="section-block" style="background:#f7fafc; border: 1px solid #cbd5e0; border-left: 4px solid #2ecc71;">
-            <h3>⚙️ 各クラスごとの予約枠・定員設定</h3>
-            <div class="bulk-edit-box">
-                <strong style="color: #dd6b20; font-size: 13px;">👥 全クラス・全時間枠の「共通定員数」を設定</strong>
-                <div class="flex-input" style="margin-top: 8px;">
-                    <span>1枠あたりの定員を一括で</span>
-                    <input type="number" id="bulkCapacityValue" value="2" style="width:65px;" min="1">
-                    <span>名に設定する</span>
-                </div>
-                <button class="btn btn-sm" style="background-color:#dd6b20; width:100%; margin-top:3px;" onclick="updateBulkCapacity()">全枠に定員数を一括適用</button>
-            </div>
-            <h4 style="margin: 10px 0 5px 0; color:#4a5568;">現在の自動生成枠一覧（クラス別）</h4>
-            <div id="scheduleContainer" style="max-height:240px; overflow-y:auto;"></div>
-        </div>
-
-        <div class="section-block">
-            <div class="header-flex"><h3>給食試食を表示する時間帯設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('lunchTimes')">一括削除</button></div>
-            <div class="flex-input"><input type="text" id="newLunchTime" placeholder="例：09:30-13:00" style="flex:1"><button class="btn btn-sm" onclick="addMaster('lunchTimes', 'newLunchTime')">追加</button></div>
-            <div class="item-list" id="listLunchTimes"></div>
-        </div>
-
-        <div class="section-block" style="background: #fff5f5; border: 1px solid #feb2b2;">
-            <h3>⏰ 予約締め切り設定</h3>
-            <div class="form-group">
-                <label>① ○日前締切設定</label>
-                <div class="flex-input">
-                    希望日の <input type="number" id="deadlineDays" style="width: 70px;" min="0"> 日前に自動締切
-                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">保存</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>② 日時指定で一括締め切り</label>
-                <div class="flex-input">
-                    <input type="datetime-local" id="forceDeadlineDatetime" style="flex:1;">
-                    <button class="btn btn-sm" onclick="saveDeadlineConfig()">一括締切を適用</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="section-block">
-            <h3>管理者アカウント設定</h3>
-            <div class="form-group"><label>通知用メールアドレス</label>
-                <div class="flex-input"><input type="email" id="adminEmail" style="flex:1"><button class="btn btn-sm" onclick="saveAccount('email')">更新</button></div>
-            </div>
-            <div class="form-group"><label>新しい管理パスワード</label>
-                <div class="flex-input"><input type="password" id="adminPassword" style="flex:1" placeholder="変更時のみ入力"><button class="btn btn-sm" onclick="saveAccount('pw')">更新</button></div>
-            </div>
-        </div>
+<div class="container" id="mainContent" style="display: none;">
+    <h2>👥 現在の予約状況一覧（希望日・時間順）</h2>
+    <div class="card" style="display: flex; justify-content: flex-end; gap: 10px; border: none; background: none; padding: 0;">
+        <button class="btn-primary" style="background-color: #2b6cb0;" onclick="window.print()">🖨️ 印刷する</button>
+        <button class="btn-danger" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
     </div>
 
-    <div class="right-col">
-        <div class="container">
-            <div class="print-title">保育参加 予約申込一覧</div>
-            <div class="header-flex no-print">
-                <h3>👥 現在の予約状況一覧（希望日・時間順）</h3>
-                <div>
-                    <button class="btn btn-success btn-sm" onclick="window.print()">📄 印刷する</button>
-                    <button class="btn btn-danger btn-sm" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
-                </div>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="b-table">
-                    <thead>
-                        <tr>
-                            <th>希望日</th>
-                            <th>時間帯</th>
-                            <th>クラス</th>
-                            <th>園児氏名</th>
-                            <th>給食試食</th>
-                            <th>メールアドレス</th>
-                            <th class="no-print">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bookingTableBody">
-                        <tr><td colspan="7" style="text-align:center;">データを読み込み中...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+    <table id="bookingsTable">
+        <thead>
+            <tr>
+                <th>希望日</th>
+                <th>時間帯</th>
+                <th>クラス</th>
+                <th>園児氏名</th>
+                <th>給食試食</th>
+                <th>メールアドレス</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <br><br>
+
+    <h2>⏱️ 予約締切の設定</h2>
+    <div class="card">
+        <div class="form-group">
+            <label for="deadline_days">① ✕日前締切設定（指定された日数未満の予約をブロックします）</label>
+            <input type="number" id="deadline_days" min="0" value="0"> 日前
+        </div>
+        <div class="form-group">
+            <label for="force_deadline_datetime">② 一括受付終了日時（指定日時以降、すべての予約受付を終了します）</label>
+            <input type="datetime-local" id="force_deadline_datetime">
+        </div>
+        <div class="btn-group">
+            <button class="btn-primary" onclick="saveDeadline()">設定を保存</button>
+            <button class="btn-danger" onclick="resetDeadline()">締切をリセット（解除）</button>
         </div>
     </div>
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwDq4iGw7KJpvOfd2CMc9a8CY0tQIqkkUqxdc-7hxhBVn0ce7iVpZQx6U1pQmaWCyzw/exec";
-    let currentToken = "";
-    let state = { classes: [], lunchTimes: [], availableDates: [], availableTimes: [], schedules: [], bookings: [] };
+    // ⚠️重要：あなたのGASの「ウェブアプリURL」をここに貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxF4WB0ptJ9psXGpWqWYus3MWzB7u5xjYvt0jF3QvlI26h9mVCMHsm09XM4pDv-mjhd/exec";
 
-    window.addEventListener('DOMContentLoaded', () => {
-        const cachedPw = sessionStorage.getItem('admin_pw');
-        const cacheTime = sessionStorage.getItem('admin_login_time');
-        if (cachedPw && cacheTime) {
-            const diffMin = (new Date().getTime() - Number(cacheTime)) / 1000 / 60;
-            if (diffMin < 5) {
-                document.getElementById('loginLoading').style.display = 'block';
-                login(cachedPw);
-                return;
+    let adminToken = "";
+
+    // ページ読み込み時に実行
+    window.onload = function() {
+        // すでにセッションにトークンがあれば自動ログイン
+        const savedToken = sessionStorage.getItem('adminToken');
+        if (savedToken) {
+            adminToken = savedToken;
+            loadAdminData();
+        }
+    };
+
+    // ログイン処理
+    function attemptLogin() {
+        const pw = document.getElementById('loginPw').value.trim();
+        if (!pw) {
+            alert("パスワードを入力してください。");
+            return;
+        }
+
+        fetch(`${GAS_URL}?action=adminLogin&pw=${encodeURIComponent(pw)}`)
+        .then(res => res.json())
+        .then(result => {
+            if (result.status === 'success') {
+                adminToken = pw;
+                sessionStorage.setItem('adminToken', pw);
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                renderData(result.config);
+            } else {
+                alert("パスワードが正しくありません。");
             }
-        }
-        sessionStorage.clear();
-    });
-
-    async function login(pw) {
-        if(!pw) return alert('パスワードを入力してください');
-        try {
-            const response = await fetch(`${GAS_URL}?action=adminLogin&pw=${encodeURIComponent(pw)}`);
-            const data = await response.json();
-            if (data.status === 'success') {
-                currentToken = pw;
-                sessionStorage.setItem('admin_pw', pw);
-                sessionStorage.setItem('admin_login_time', new Date().getTime().toString());
-
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'flex';
-                
-                document.getElementById('adminEmail').value = data.config.admin_email;
-                document.getElementById('deadlineDays').value = data.config.deadline_days || 0;
-                document.getElementById('forceDeadlineDatetime').value = data.config.force_deadline_datetime || "";
-                document.getElementById('bulkCapacityValue').value = data.config.default_capacity || 2;
-                
-                state.classes = data.config.classes;
-                state.lunchTimes = data.config.lunch_times;
-                state.availableDates = data.config.available_dates;
-                state.availableTimes = data.config.available_times;
-                state.schedules = data.config.schedules;
-                state.bookings = data.config.bookings;
-                
-                renderAll();
-            } else { alert('パスワードが正しくありません。'); logout(); }
-        } catch (e) { alert('通信エラーが発生しました。'); }
-        document.getElementById('loginLoading').style.display = 'none';
+        })
+        .catch(err => alert("通信エラーが発生しました: " + err));
     }
 
-    function logout() { sessionStorage.clear(); location.reload(); }
-
-    function renderAll() {
-        renderTags('classes', 'listClasses');
-        renderTags('lunchTimes', 'listLunchTimes');
-        renderTags('availableDates', 'listAvailableDates');
-        renderTags('availableTimes', 'listAvailableTimes');
-        renderSchedules();
-        renderBookings();
-    }
-
-    function renderTags(key, elementId) {
-        const container = document.getElementById(elementId);
-        container.innerHTML = '';
-        state[key].forEach((item, index) => {
-            const tag = document.createElement('div');
-            tag.className = 'item-tag';
-            tag.innerHTML = `${item} <button class="btn btn-danger btn-sm" style="border-radius:50%; padding:0px 5px; margin-left:6px;" onclick="deleteMaster('${key}', ${index})">×</button>`;
-            container.appendChild(tag);
-        });
-    }
-
-    function renderSchedules() {
-        const container = document.getElementById('scheduleContainer');
-        container.innerHTML = '';
-        if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">希望日・時間帯・クラスを設定すると自動生成されます。</div>'; return; }
-        
-        state.schedules.sort((a,b) => (a.date + a.time_slot + a.target_class).localeCompare(b.date + b.time_slot + b.target_class));
-        state.schedules.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'sch-card header-flex';
-            card.innerHTML = `<div><strong>${s.date}</strong> | ${s.time_slot} | <span style="color:#3182ce;font-weight:bold;">${s.target_class}</span> (定員:${s.capacity} / 予約:${s.reserved_count})</div>
-                <span style="font-size:11px; color:#2ecc71; font-weight:bold;">● 連動中</span>`;
-            container.appendChild(card);
-        });
-    }
-
-    function renderBookings() {
-        const tbody = document.getElementById('bookingTableBody'); tbody.innerHTML = '';
-        if(state.bookings.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>'; return; }
-        
-        state.bookings.sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot));
-        state.bookings.forEach(b => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${b.date}</td><td>${b.timeSlot}</td><td style="font-weight:bold;color:#2c3e50;">${b.childClass}</td><td>${b.childName}</td><td>${b.lunchNeeded}</td><td>${b.email}</td>
-                <td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteBookingFromServer('${b.id}')">削除</button></td>`;
-            tbody.appendChild(row);
-        });
-    }
-
-    function switchDateMode(mode) {
-        document.getElementById('tabSingle').classList.toggle('active', mode === 'single');
-        document.getElementById('tabRange').classList.toggle('active', mode === 'range');
-        document.getElementById('dateSingleForm').style.display = (mode === 'single') ? 'flex' : 'none';
-        document.getElementById('dateRangeForm').style.display = (mode === 'range') ? 'block' : 'none';
-    }
-
-    async function addMasterDateSingle() {
-        const input = document.getElementById('newMasterDate'); if(!input.value) return;
-        const formattedDate = input.value.replace(/-/g, '/');
-        if(state.availableDates.includes(formattedDate)) return alert('その日付は既に登録されています。');
-        state.availableDates.push(formattedDate);
-        state.availableDates.sort();
-        if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; login(currentToken); }
-    }
-
-    async function addMasterDateRange() {
-        const startInput = document.getElementById('newMasterDateStart').value;
-        const endInput = document.getElementById('newMasterDateEnd').value;
-        const excludeWeekend = document.getElementById('schExcludeWeekend').checked;
-        if(!startInput || !endInput) return alert('開始日と終了日の両方を選択してください。');
-        
-        let start = new Date(startInput); let end = new Date(endInput);
-        if(start > end) return alert('開始日が終了日より後になっています。');
-
-        let current = new Date(start); let addedCount = 0;
-        while(current <= end) {
-            let dayOfWeek = current.getDay();
-            if(!(excludeWeekend && (dayOfWeek === 0 || dayOfWeek === 6))) {
-                let y = current.getFullYear();
-                let m = ('0' + (current.getMonth() + 1)).slice(-2);
-                let d = ('0' + current.getDate()).slice(-2);
-                let formattedStr = `${y}/${m}/${d}`;
-                if(!state.availableDates.includes(formattedStr)) { state.availableDates.push(formattedStr); addedCount++; }
+    // データの読み込み
+    function loadAdminData() {
+        fetch(`${GAS_URL}?action=adminLogin&pw=${encodeURIComponent(adminToken)}`)
+        .then(res => res.json())
+        .then(result => {
+            if (result.status === 'success') {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                renderData(result.config);
+            } else {
+                sessionStorage.removeItem('adminToken');
+                location.reload();
             }
-            current.setDate(current.getDate() + 1);
+        });
+    }
+
+    // 画面へのデータ反映（ズレの修正・ソート反映）
+    function renderData(config) {
+        // 締切設定の反映
+        if(document.getElementById('deadline_days')) {
+            document.getElementById('deadline_days').value = config.deadline_days || 0;
         }
-        if(addedCount === 0) return alert('指定期間内に追加できる新しい日付がありません。');
-        state.availableDates.sort();
-        if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) {
-            document.getElementById('newMasterDateStart').value = ''; document.getElementById('newMasterDateEnd').value = '';
-            alert(`${addedCount}件の日付を追加し、全クラス別の枠を自動生成しました。`);
-            login(currentToken);
+        if(document.getElementById('force_deadline_datetime')) {
+            document.getElementById('force_deadline_datetime').value = config.force_deadline_datetime || "";
         }
-    }
 
-    async function addMaster(key, inputId) {
-        const input = document.getElementById(inputId); const val = input.value.trim(); if(!val) return;
-        if(state[key].includes(val)) return alert('既に登録されています。');
-        state[key].push(val);
-        if(await sendAction("updateMaster", { key: key, list: state[key] })) { input.value = ''; login(currentToken); }
-    }
+        // 予約一覧の反映（ズレを解消した状態）
+        const tbody = document.querySelector('#bookingsTable tbody');
+        tbody.innerHTML = "";
 
-    async function deleteMaster(key, index) {
-        if(!confirm('これを削除しますか？紐づく自動予約枠もすべて同時に自動削除されます。')) return;
-        state[key].splice(index, 1);
-        if(await sendAction("updateMaster", { key: key, list: state[key] })) { login(currentToken); }
-    }
-
-    async function clearMaster(key) {
-        if(!confirm('本当に一括削除しますか？すべての自動予約枠がクリアされます。')) return;
-        state[key] = [];
-        if(await sendAction("updateMaster", { key: key, list: state[key] })) { login(currentToken); }
-    }
-
-    async function updateBulkCapacity() {
-        const targetCapacity = Number(document.getElementById('bulkCapacityValue').value);
-        if(!targetCapacity || targetCapacity < 1) return alert('有効な定員数を入力してください。');
-        if(!confirm(`すべてのクラス・時間枠の共通定員数を「${targetCapacity}名」に変更しますか？`)) return;
-
-        if(await sendAction("updateBulkCapacity", { capacity: targetCapacity })) {
-            alert('全クラスの定員数を一括更新しました！');
-            login(currentToken);
+        if (!config.bookings || config.bookings.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>`;
+            return;
         }
+
+        config.bookings.forEach(b => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${b.date}</td>
+                <td>${b.timeSlot}</td>
+                <td>${b.childClass}</td>
+                <td>${b.childName}</td>
+                <td>${b.lunchNeeded}</td>
+                <td>${b.email || 'なし'}</td>
+                <td><button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteBooking('${b.id}')">削除</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
-    async function saveDeadlineConfig() {
-        const payload = { deadlineDays: document.getElementById('deadlineDays').value, forceDeadlineDatetime: document.getElementById('forceDeadlineDatetime').value };
-        if(await sendAction("saveDeadline", payload)) alert('締め切り設定を保存・適用しました。');
+    // 締切設定の保存
+    function saveDeadline() {
+        const days = document.getElementById('deadline_days').value;
+        const datetime = document.getElementById('force_deadline_datetime').value;
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "saveDeadline",
+                token: adminToken,
+                data: { deadlineDays: days, forceDeadlineDatetime: datetime }
+            })
+        })
+        .then(() => {
+            alert("締切設定を保存しました。");
+            loadAdminData();
+        })
+        .catch(err => alert("保存エラー: " + err));
     }
 
-    async function saveAccount(type) {
-        const payload = { email: document.getElementById('adminEmail').value, pw: type === 'pw' ? document.getElementById('adminPassword').value : "" };
-        if(type === 'pw' && !payload.pw) return alert('パスワードを入力してください');
-        if(await sendAction("saveAccount", payload)) { alert('アカウント情報を更新しました。'); if(type === 'pw') { logout(); } }
+    // ✨追加：締切設定のリセットボタン機能
+    function resetDeadline() {
+        if (!confirm("締切設定をリセットして、すべての予約枠の締切を解除しますか？")) {
+            return;
+        }
+
+        document.getElementById('deadline_days').value = 0;
+        document.getElementById('force_deadline_datetime').value = "";
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "saveDeadline",
+                token: adminToken,
+                data: { deadlineDays: 0, forceDeadlineDatetime: "" }
+            })
+        })
+        .then(() => {
+            alert("締切設定をリセットしました。すべての枠で申込が可能になりました。");
+            loadAdminData();
+        })
+        .catch(err => alert("リセットエラー: " + err));
     }
 
-    async function deleteBookingFromServer(id) {
-        if(!confirm('この予約を削除しますか？')) return;
-        if(await sendAction("deleteBooking", { bookingId: id })) { login(currentToken); }
-    }
-    async function clearAllBookings() {
-        if(!confirm('⚠️ 本当にすべての予約を一括削除しますか？')) return;
-        if(await sendAction("clearAllBookings", {})) { login(currentToken); }
+    // 1件の予約を削除
+    function deleteBooking(id) {
+        if (!confirm("この予約を削除してもよろしいですか？（スプレッドシートからも消去されます）")) return;
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "deleteBooking",
+                token: adminToken,
+                data: { bookingId: id }
+            })
+        })
+        .then(() => {
+            alert("予約を削除しました。");
+            loadAdminData();
+        })
+        .catch(err => alert("削除エラー: " + err));
     }
 
-    async function sendAction(action, data) {
-        try {
-            const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: action, token: currentToken, data: data }) });
-            const res = await response.json();
-            if(res.status === 'success') return true;
-            alert('エラー: ' + res.message);
-        } catch(e) { alert('通信エラーが発生しました。'); }
-        return false;
+    // すべての予約を一括クリア
+    function clearAllBookings() {
+        if (!confirm("🚨【警告】本当に全ての予約データを削除しますか？この操作は取り消せません。")) return;
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "clearAllBookings",
+                token: adminToken,
+                data: {}
+            })
+        })
+        .then(() => {
+            alert("すべての予約データを削除しました。");
+            loadAdminData();
+        })
+        .catch(err => alert("一括削除エラー: " + err));
     }
 </script>
 </body>
