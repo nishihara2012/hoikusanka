@@ -9,14 +9,18 @@
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h2 { border-bottom: 2px solid #0056b3; padding-bottom: 10px; color: #0056b3; margin-top: 0; }
         .admin-layout { display: flex; gap: 30px; flex-wrap: wrap; }
-        .admin-left { flex: 1; min-width: 350px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
+        .admin-left { flex: 1; min-width: 380px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
         .admin-right { flex: 1.5; min-width: 450px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #0056b3; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%; }
+        .form-group { margin-bottom: 20px; border-bottom: 1px dashed #ddd; padding-bottom: 15px; }
+        .form-group:last-child { border-bottom: none; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #004085; }
+        .input-btn-group { display: flex; gap: 8px; margin-top: 5px; }
+        input, select { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #0056b3; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
         button:hover { background: #004085; }
-        .print-btn { background: #28a745; margin-bottom: 15px; }
+        button.btn-delete { background: #dc3545; }
+        button.btn-delete:hover { background: #bd2130; }
+        .print-btn { background: #28a745; margin-bottom: 15px; padding: 12px; font-size: 15px; width: 100%; }
         .print-btn:hover { background: #218838; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
@@ -25,7 +29,6 @@
         .hidden { display: none; }
         .auth-container { max-width: 350px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
-        /* 印刷用設定（右画面の予約状況一覧のみを綺麗に印刷） */
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
@@ -38,11 +41,11 @@
 
 <div id="authView" class="auth-container">
     <h3 style="text-align:center; margin-top:0;">管理画面 ログイン</h3>
-    <div class="form-group">
-        <label for="adminPasswordInput">パスワード</label>
-        <input type="password" id="adminPasswordInput">
+    <div style="margin-bottom: 15px;">
+        <label for="adminPasswordInput">パスワード (初期値: 1234)</label>
+        <input type="password" id="adminPasswordInput" style="width:100%;">
     </div>
-    <button onclick="checkPassword()">ログイン</button>
+    <button onclick="checkPassword()" style="width:100%; padding:10px;">ログイン</button>
 </div>
 
 <div id="mainView" class="container hidden">
@@ -50,40 +53,75 @@
     <div class="admin-layout">
         
         <div class="admin-left">
-            <h3>システム設定</h3>
+            <h3>各項目設定</h3>
+            
             <div class="form-group">
-                <label>締切設定（例: 3日前 / 2026-07-01）</label>
-                <input type="text" id="cfgDeadline" placeholder="締切条件を入力">
+                <label>① 締切設定 (例: 3日前 / 2026-07-01)</label>
+                <div class="input-btn-group">
+                    <input type="text" id="cfgDeadline" placeholder="未設定">
+                    <button onclick="sendItem('save_deadline', 'cfgDeadline')">保存</button>
+                    <button class="btn-delete" onclick="sendItem('delete_deadline', 'cfgDeadline', true)">削除</button>
+                </div>
             </div>
+            
             <div class="form-group">
-                <label>クラス設定（カンマ「,」区切り）</label>
-                <input type="text" id="cfgClasses" value="ひよこ,りす,うさぎ,くま,ぞう,きりん">
+                <label>② クラス設定 (カンマ「,」区切り)</label>
+                <div class="input-btn-group">
+                    <input type="text" id="cfgClasses" placeholder="例: ひよこ,りす,うさぎ">
+                    <button onclick="sendItem('save_classes', 'cfgClasses')">保存</button>
+                    <button class="btn-delete" onclick="sendItem('delete_classes', 'cfgClasses', true)">一括削除</button>
+                </div>
             </div>
+            
             <div class="form-group">
-                <label>希望日設定（カンマ「,」区切り）</label>
-                <input type="text" id="cfgDates" placeholder="例: 2026-07-01,2026-07-02">
+                <label>③ 希望日設定 (カンマ「,」区切り)</label>
+                <div class="input-btn-group">
+                    <input type="text" id="cfgDates" placeholder="例: 2026-07-01,2026-07-02">
+                    <button onclick="sendItem('save_dates', 'cfgDates')">保存</button>
+                    <button class="btn-delete" onclick="sendItem('delete_dates', 'cfgDates', true)">一括削除</button>
+                </div>
             </div>
+            
             <div class="form-group">
-                <label>時間設定（カンマ「,」区切り）</label>
-                <input type="text" id="cfgTimes" value="09:00-11:00,11:00-13:00">
+                <label>④ 時間設定 (カンマ「,」区切り)</label>
+                <div class="input-btn-group">
+                    <input type="text" id="cfgTimes" placeholder="例: 09:00-11:00,11:00-13:00">
+                    <button onclick="sendItem('save_times', 'cfgTimes')">保存</button>
+                    <button class="btn-delete" onclick="sendItem('delete_times', 'cfgTimes', true)">一括削除</button>
+                </div>
             </div>
+            
             <div class="form-group">
-                <label>昼食時間設定（上記時間帯と完全一致で表示）</label>
-                <input type="text" id="cfgLunchTime" value="11:00-13:00">
+                <label>⑤ 昼食時間設定 (上記時間枠と完全一致で表示)</label>
+                <div class="input-btn-group">
+                    <input type="text" id="cfgLunchTime" placeholder="例: 11:00-13:00">
+                    <button onclick="sendItem('save_lunch', 'cfgLunchTime')">設定保存</button>
+                </div>
             </div>
+            
             <div class="form-group">
-                <label>定員数設定（1枠あたりの上限組数）</label>
-                <input type="number" id="cfgLimit" value="3">
+                <label>⑥ 定員数設定 (各クラス1枠あたりの上限組数)</label>
+                <div class="input-btn-group">
+                    <input type="number" id="cfgLimit">
+                    <button onclick="sendItem('save_limit', 'cfgLimit')">定員保存</button>
+                </div>
             </div>
+            
             <div class="form-group">
-                <label>管理者通知先メールアドレス</label>
-                <input type="email" id="cfgAdminEmail" placeholder="園のメールアドレス">
+                <label>⑦ 管理者用通知先メールアドレス設定</label>
+                <div class="input-btn-group">
+                    <input type="email" id="cfgAdminEmail" placeholder="園の受信用アドレス">
+                    <button onclick="sendItem('save_admin_email', 'cfgAdminEmail')">アドレス保存</button>
+                </div>
             </div>
+            
             <div class="form-group">
-                <label>管理画面パスワード変更</label>
-                <input type="password" id="cfgPassword" value="1234">
+                <label>⑧ 管理画面パスワード設定</label>
+                <div class="input-btn-group">
+                    <input type="password" id="cfgPassword">
+                    <button onclick="sendItem('save_password', 'cfgPassword')">PW変更</button>
+                </div>
             </div>
-            <button onclick="saveSettings()" id="saveBtn">設定を一括保存する</button>
         </div>
         
         <div class="admin-right">
@@ -102,8 +140,7 @@
                             <th>保護者メール</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
@@ -111,35 +148,32 @@
 </div>
 
 <script>
-    // ⚠️【差し替え】index.htmlと同じGASのウェブアプリURLを貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxthf1gX82T3s9lOwl_Xc9RFdISH16-_JP2HUboCaEB68bznKsI-KzrGBmvwXUUtYoE/exec";
+    // ⚠️【差し替え】新しくデプロイしたGASのウェブアプリURLを貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbw-RyCGtFWyK_nn696zma4kIx75nALg0U99ciu-USHbfTHtu-Aitr8TGMYTFBLWLzAg/exec";
     let systemConfig = {};
 
-    // 最初にスプレッドシートから現在の設定と予約状況データをまとめて取得
     async function loadAdminData() {
         try {
             const response = await fetch(GAS_URL);
             const data = await response.json();
             systemConfig = data.config || {};
             
-            // 取得した設定値を入力欄に反映
-            if(systemConfig.password) {
-                document.getElementById('cfgDeadline').value = systemConfig.deadline || '';
-                document.getElementById('cfgClasses').value = systemConfig.classes || '';
-                document.getElementById('cfgDates').value = systemConfig.dates || '';
-                document.getElementById('cfgTimes').value = systemConfig.times || '';
-                document.getElementById('cfgLunchTime').value = systemConfig.lunchTime || '';
-                document.getElementById('cfgLimit').value = systemConfig.limit || 3;
-                document.getElementById('cfgAdminEmail').value = systemConfig.adminEmail || '';
-                document.getElementById('cfgPassword').value = systemConfig.password || '1234';
-            }
+            // 各入力欄に現在の設定値を反映
+            document.getElementById('cfgDeadline').value = systemConfig.deadline || '';
+            document.getElementById('cfgClasses').value = systemConfig.classes || '';
+            document.getElementById('cfgDates').value = systemConfig.dates || '';
+            document.getElementById('cfgTimes').value = systemConfig.times || '';
+            document.getElementById('cfgLunchTime').value = systemConfig.lunchTime || '';
+            document.getElementById('cfgLimit').value = systemConfig.limit || '3';
+            document.getElementById('cfgAdminEmail').value = systemConfig.adminEmail || '';
+            document.getElementById('cfgPassword').value = systemConfig.password || '1234';
 
-            // 予約状況一覧テーブルの描画（クラス、希望日、時間の順にソート済み）
+            // テーブル描画（クラス・日付・時間の順）
             const tbody = document.querySelector('#reservationTable tbody');
             tbody.innerHTML = '';
             if(data.reservations && data.reservations.length > 0) {
                 data.reservations.forEach(res => {
-                    let row = `<tr>
+                    tbody.innerHTML += `<tr>
                         <td>${res.className}</td>
                         <td>${res.date}</td>
                         <td>${res.timeSlot}</td>
@@ -147,23 +181,18 @@
                         <td>${res.lunch}</td>
                         <td>${res.email}</td>
                     </tr>`;
-                    tbody.innerHTML += row;
                 });
             } else {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">現在、予約はありません。</td></tr>';
             }
         } catch (error) {
-            console.error(error);
             alert("データの取得に失敗しました。");
         }
     }
 
-    // パスワード認証
     function checkPassword() {
         const input = document.getElementById('adminPasswordInput').value;
-        const correctPassword = systemConfig.password || "1234"; // 初期状態は1234
-        
-        if(input === correctPassword) {
+        if(input === (systemConfig.password || "1234")) {
             document.getElementById('authView').classList.add('hidden');
             document.getElementById('mainView').classList.remove('hidden');
         } else {
@@ -171,37 +200,28 @@
         }
     }
 
-    // 設定の一括保存処理
-    async function saveSettings() {
-        const saveBtn = document.getElementById('saveBtn');
-        saveBtn.disabled = true;
-        saveBtn.innerText = "保存中...";
+    // 各項目個別の通信処理
+    async function sendItem(type, inputId, isDelete = false) {
+        if (isDelete && !confirm("本当にこの項目を削除（クリア）しますか？")) {
+            return;
+        }
 
+        const inputEl = document.getElementById(inputId);
         const payload = {
-            type: "admin_save",
-            deadline: document.getElementById('cfgDeadline').value,
-            classes: document.getElementById('cfgClasses').value,
-            dates: document.getElementById('cfgDates').value,
-            times: document.getElementById('cfgTimes').value,
-            lunchTime: document.getElementById('cfgLunchTime').value,
-            limit: document.getElementById('cfgLimit').value,
-            adminEmail: document.getElementById('cfgAdminEmail').value,
-            password: document.getElementById('cfgPassword').value
+            type: type,
+            value: isDelete ? "" : inputEl.value
         };
 
         try {
             const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
             const res = await response.json();
             alert(res.message);
-            location.reload(); // 最新情報を再読み込み
+            loadAdminData(); // 画面の値を再更新
         } catch (error) {
-            alert("設定の保存に失敗しました。");
-            saveBtn.disabled = false;
-            saveBtn.innerText = "設定を一括保存する";
+            alert("通信に失敗しました。");
         }
     }
 
-    // 起動時にデータを先読み
     window.onload = loadAdminData;
 </script>
 </body>
