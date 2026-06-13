@@ -8,7 +8,7 @@
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; }
         .main-layout { display: flex; gap: 25px; max-width: 1400px; margin: 0 auto; }
         .left-col { flex: 1; min-width: 480px; max-height: 90vh; overflow-y: auto; padding-right: 10px; }
-        .right-col { flex: 1.2; min-width: 550px; }
+        .right-col { flex: 1.3; min-width: 550px; }
         .container { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
         h2, h3 { color: #2c3e50; border-bottom: 2px solid #34495e; padding-bottom: 6px; margin-top: 0; }
         .form-group { margin-bottom: 15px; }
@@ -73,11 +73,11 @@
         </div>
 
         <div class="section-block" style="border-left: 4px solid #3182ce;">
-            <div class="header-flex"><h3>📅 希望日の設定（自動枠連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">全希望日を一括削除</button></div>
+            <div class="header-flex"><h3>📅 希望日の設定（各クラス連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">全希望日を一括削除</button></div>
             
             <div class="tab-group">
                 <button id="tabSingle" class="tab-btn active" onclick="switchDateMode('single')">個別追加</button>
-                <button id="tabRange" class="tab-btn" onclick="switchDateMode('range')">🌟 期間一括追加（◯日〜◯日）</button>
+                <button id="tabRange" class="tab-btn" onclick="switchDateMode('range')">🌟 期間一括追加</button>
             </div>
 
             <div id="dateSingleForm" class="flex-input">
@@ -101,7 +101,7 @@
         </div>
 
         <div class="section-block" style="border-left: 4px solid #319795;">
-            <div class="header-flex"><h3>🕒 時間帯の設定（自動枠連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableTimes')">全時間帯を一括削除</button></div>
+            <div class="header-flex"><h3>🕒 時間帯の設定（各クラス連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableTimes')">全時間帯を一括削除</button></div>
             <div class="flex-input">
                 <input type="text" id="newMasterTime" placeholder="例：09:30-11:30" style="flex:1;">
                 <button class="btn btn-sm" onclick="addMaster('availableTimes', 'newMasterTime')">追加</button>
@@ -110,20 +110,20 @@
         </div>
 
         <div class="section-block" style="background:#f7fafc; border: 1px solid #cbd5e0; border-left: 4px solid #2ecc71;">
-            <h3>⚙️ 予約受付枠の定員・自動生成状況</h3>
+            <h3>⚙️ 各クラスごとの予約枠・定員設定</h3>
             
             <div class="bulk-edit-box">
-                <strong style="color: #dd6b20; font-size: 13px;">👥 全予約枠の「共通定員数」を設定</strong>
+                <strong style="color: #dd6b20; font-size: 13px;">👥 全クラス・全時間枠の「共通定員数」を設定</strong>
                 <div class="flex-input" style="margin-top: 8px;">
-                    <span>すべての枠の定員を一括で</span>
+                    <span>1枠あたりの定員を一括で</span>
                     <input type="number" id="bulkCapacityValue" value="2" style="width:65px;" min="1">
                     <span>名に設定する</span>
                 </div>
-                <button class="btn btn-sm" style="background-color:#dd6b20; width:100%; margin-top:3px;" onclick="updateBulkCapacity()">定員数を一括適用して保存</button>
+                <button class="btn btn-sm" style="background-color:#dd6b20; width:100%; margin-top:3px;" onclick="updateBulkCapacity()">全枠に定員数を一括適用</button>
             </div>
 
-            <h4 style="margin: 10px 0 5px 0; color:#4a5568;">現在自動生成されている予約枠（受付中）</h4>
-            <div id="scheduleContainer" style="max-height:220px; overflow-y:auto;"></div>
+            <h4 style="margin: 10px 0 5px 0; color:#4a5568;">現在の自動生成枠一覧（クラス別）</h4>
+            <div id="scheduleContainer" style="max-height:240px; overflow-y:auto;"></div>
         </div>
 
         <div class="section-block">
@@ -165,7 +165,7 @@
         <div class="container">
             <div class="print-title">保育参加 予約申込一覧</div>
             <div class="header-flex no-print">
-                <h3>👥 現在の予約状況一覧</h3>
+                <h3>👥 現在の予約状況一覧（希望日・時間順）</h3>
                 <div>
                     <button class="btn btn-success btn-sm" onclick="window.print()">📄 印刷する</button>
                     <button class="btn btn-danger btn-sm" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
@@ -175,10 +175,10 @@
                 <table class="b-table">
                     <thead>
                         <tr>
-                            <th>クラス</th>
-                            <th>園児氏名</th>
                             <th>希望日</th>
                             <th>時間帯</th>
+                            <th>クラス</th>
+                            <th>園児氏名</th>
                             <th>給食試食</th>
                             <th>メールアドレス</th>
                             <th class="no-print">操作</th>
@@ -194,7 +194,7 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwPGhIMAeRXBrZLGO60YS7dNj0YzzxBm4A1dLyaN14xR2qVQpIwXjE8J542WYP2uytn/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxD-QW5_et3t3qV5f8cpyuIHRP-2OuHb1YS4HpymsoyAcV9SRo5XqmwfUIzepNHnnvW/exec";
     let currentToken = "";
     let state = { classes: [], lunchTimes: [], availableDates: [], availableTimes: [], schedules: [], bookings: [] };
 
@@ -268,13 +268,15 @@
     function renderSchedules() {
         const container = document.getElementById('scheduleContainer');
         container.innerHTML = '';
-        if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">希望日または時間帯を設定すると、ここに自動で予約枠が生成されます。</div>'; return; }
-        state.schedules.sort((a,b) => (a.date + a.time_slot).localeCompare(b.date + b.time_slot));
+        if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">希望日・時間帯・クラスを設定すると自動生成されます。</div>'; return; }
+        
+        // 日付 -> 時間 -> クラス名 の順で並び替え
+        state.schedules.sort((a,b) => (a.date + a.time_slot + a.target_class).localeCompare(b.date + b.time_slot + b.target_class));
         state.schedules.forEach(s => {
             const card = document.createElement('div');
             card.className = 'sch-card header-flex';
-            card.innerHTML = `<div><strong>${s.date}</strong> | ${s.time_slot} (定員:${s.capacity}名 / 予約済:${s.reserved_count}名)</div>
-                <span style="font-size:11px; color:#2ecc71; font-weight:bold;">● 自動連動中</span>`;
+            card.innerHTML = `<div><strong>${s.date}</strong> | ${s.time_slot} | <span style="color:#3182ce;font-weight:bold;">${s.target_class}</span> (定員:${s.capacity} / 予約:${s.reserved_count})</div>
+                <span style="font-size:11px; color:#2ecc71; font-weight:bold;">● 連動中</span>`;
             container.appendChild(card);
         });
     }
@@ -282,9 +284,13 @@
     function renderBookings() {
         const tbody = document.getElementById('bookingTableBody'); tbody.innerHTML = '';
         if(state.bookings.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>'; return; }
+        
+        // 【要件】希望日順（date） ➔ 時間順（timeSlot）でソートして描画
+        state.bookings.sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot));
+
         state.bookings.forEach(b => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td>${b.childClass}</td><td>${b.childName}</td><td>${b.date}</td><td>${b.timeSlot}</td><td>${b.lunchNeeded}</td><td>${b.email}</td>
+            row.innerHTML = `<td>${b.date}</td><td>${b.timeSlot}</td><td style="font-weight:bold;color:#2c3e50;">${b.childClass}</td><td>${b.childName}</td><td>${b.lunchNeeded}</td><td>${b.email}</td>
                 <td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteBookingFromServer('${b.id}')">削除</button></td>`;
             tbody.appendChild(row);
         });
@@ -316,7 +322,7 @@
 
         let current = new Date(start); let addedCount = 0;
         while(current <= end) {
-            let dayOfWeek = current.getDay(); // 0:日, 6:土
+            let dayOfWeek = current.getDay();
             if(!(excludeWeekend && (dayOfWeek === 0 || dayOfWeek === 6))) {
                 let y = current.getFullYear();
                 let m = ('0' + (current.getMonth() + 1)).slice(-2);
@@ -330,7 +336,7 @@
         state.availableDates.sort();
         if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) {
             document.getElementById('newMasterDateStart').value = ''; document.getElementById('newMasterDateEnd').value = '';
-            alert(`${addedCount}件の日付を追加し、予約枠を全自動生成しました。`);
+            alert(`${addedCount}件の日付を追加し、全クラス別の枠を自動生成しました。`);
             login(currentToken);
         }
     }
@@ -354,14 +360,13 @@
         if(await sendAction("updateMaster", { key: key, list: state[key] })) { login(currentToken); }
     }
 
-    // 👥 定員の一括適用保存機能
     async function updateBulkCapacity() {
         const targetCapacity = Number(document.getElementById('bulkCapacityValue').value);
         if(!targetCapacity || targetCapacity < 1) return alert('有効な定員数を入力してください。');
-        if(!confirm(`すべての予約枠の共通定員数を「${targetCapacity}名」に変更しますか？`)) return;
+        if(!confirm(`すべてのクラス・時間枠の共通定員数を「${targetCapacity}名」に変更しますか？`)) return;
 
         if(await sendAction("updateBulkCapacity", { capacity: targetCapacity })) {
-            alert('定員設定を一括更新しました！');
+            alert('全クラスの定員数を一括更新しました！');
             login(currentToken);
         }
     }
