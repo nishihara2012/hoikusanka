@@ -18,8 +18,6 @@
         .btn-primary:hover { background-color: #45a049; }
         .btn-danger { background-color: #f44336; color: white; }
         .btn-danger:hover { background-color: #da190b; }
-        .btn-warning { background-color: #f39c12; color: white; }
-        .btn-warning:hover { background-color: #d68910; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { border: 1px solid #e1e4e8; padding: 12px; text-align: left; }
         th { background-color: #f2f2f2; color: #4a5568; }
@@ -79,7 +77,6 @@
         </div>
         <div class="btn-group">
             <button class="btn-primary" onclick="saveDeadline()">設定を保存</button>
-            <button class="btn-warning" onclick="resetDeadlineFields()">締切をリセット（解除）</button>
         </div>
     </div>
 </div>
@@ -189,19 +186,6 @@
             loadAdminData();
         })
         .catch(err => alert("保存エラー: " + err));
-    }
-
-    // ✨ 安全なリセット処理（入力欄をゼロ・空欄にしてそのまま安全に保存するだけ）
-    function resetDeadlineFields() {
-        if (!confirm("締切設定をリセットして、すべての予約枠の締切を解除しますか？")) {
-            return;
-        }
-        // ① 画面の数字と日付を真っさらにする
-        document.getElementById('deadline_days').value = 0;
-        document.getElementById('force_deadline_datetime').value = "";
-        
-        // ② その状態のまま、通常の「保存処理」を自動実行する
-        saveDeadline();
     }
 
     // 1件の予約を削除
