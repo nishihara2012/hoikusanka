@@ -25,7 +25,7 @@
         #adminContent { display: none; }
         .section-block { background: #fafafa; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .flex-input { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-        .item-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 100px; overflow-y: auto; padding: 4px; background: #fff; border: 1px solid #edf2f7; border-radius: 6px; }
+        .item-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 120px; overflow-y: auto; padding: 4px; background: #fff; border: 1px solid #edf2f7; border-radius: 6px; }
         .item-tag { background: #e2e8f0; padding: 4px 10px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; }
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
         .b-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
@@ -35,7 +35,7 @@
         .tab-group { display: flex; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid #cbd5e0; padding-bottom: 8px; }
         .tab-btn { background: #e2e8f0; color: #4a5568; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
         .tab-btn.active { background: #3182ce; color: white; }
-        .bulk-edit-box { background: #fffaf0; border: 1px dashed #dd6b20; padding: 12px; border-radius: 6px; margin-top: 10px; }
+        .bulk-edit-box { background: #fffaf0; border: 1px dashed #dd6b20; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
         @media print {
             body { background: white; padding: 0; }
             .no-print, .left-col, .btn, h2 { display: none !important; }
@@ -73,16 +73,16 @@
         </div>
 
         <div class="section-block" style="border-left: 4px solid #3182ce;">
-            <div class="header-flex"><h3>📅 希望日の選択肢 設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">一括削除</button></div>
+            <div class="header-flex"><h3>📅 希望日の設定（自動枠連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">全希望日を一括削除</button></div>
             
             <div class="tab-group">
-                <button id="tabSingle" class="tab-btn active" onclick="switchDateMode('single')">個別設定（1日ずつ）</button>
-                <button id="tabRange" class="tab-btn" onclick="switchDateMode('range')">◯日〜◯日設定（期間）</button>
+                <button id="tabSingle" class="tab-btn active" onclick="switchDateMode('single')">個別追加</button>
+                <button id="tabRange" class="tab-btn" onclick="switchDateMode('range')">🌟 期間一括追加（◯日〜◯日）</button>
             </div>
 
             <div id="dateSingleForm" class="flex-input">
                 <input type="date" id="newMasterDate" style="flex:1;">
-                <button class="btn btn-sm" onclick="addMasterDateSingle()">選択肢に追加</button>
+                <button class="btn btn-sm" onclick="addMasterDateSingle()">追加</button>
             </div>
 
             <div id="dateRangeForm" style="display:none; margin-bottom: 10px;">
@@ -91,83 +91,45 @@
                     <span>〜</span>
                     <input type="date" id="newMasterDateEnd" style="flex:1;">
                 </div>
-                <button class="btn btn-sm" style="width:100%;" onclick="addMasterDateRange()">指定期間をすべて選択肢に追加</button>
+                <label style="margin-bottom:6px; font-weight:normal; color:#e53e3e;">
+                    <input type="checkbox" id="schExcludeWeekend" checked> 土曜日・日曜日を除外する
+                </label>
+                <button class="btn btn-sm" style="width:100%; margin-top:5px;" onclick="addMasterDateRange()">指定期間をすべて追加</button>
             </div>
 
             <div class="item-list" id="listAvailableDates"></div>
         </div>
 
         <div class="section-block" style="border-left: 4px solid #319795;">
-            <div class="header-flex"><h3>🕒 時間帯の選択肢 設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableTimes')">一括削除</button></div>
+            <div class="header-flex"><h3>🕒 時間帯の設定（自動枠連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableTimes')">全時間帯を一括削除</button></div>
             <div class="flex-input">
                 <input type="text" id="newMasterTime" placeholder="例：09:30-11:30" style="flex:1;">
-                <button class="btn btn-sm" onclick="addMaster('availableTimes', 'newMasterTime')">選択肢に追加</button>
+                <button class="btn btn-sm" onclick="addMaster('availableTimes', 'newMasterTime')">追加</button>
             </div>
             <div class="item-list" id="listAvailableTimes"></div>
+        </div>
+
+        <div class="section-block" style="background:#f7fafc; border: 1px solid #cbd5e0; border-left: 4px solid #2ecc71;">
+            <h3>⚙️ 予約受付枠の定員・自動生成状況</h3>
+            
+            <div class="bulk-edit-box">
+                <strong style="color: #dd6b20; font-size: 13px;">👥 全予約枠の「共通定員数」を設定</strong>
+                <div class="flex-input" style="margin-top: 8px;">
+                    <span>すべての枠の定員を一括で</span>
+                    <input type="number" id="bulkCapacityValue" value="2" style="width:65px;" min="1">
+                    <span>名に設定する</span>
+                </div>
+                <button class="btn btn-sm" style="background-color:#dd6b20; width:100%; margin-top:3px;" onclick="updateBulkCapacity()">定員数を一括適用して保存</button>
+            </div>
+
+            <h4 style="margin: 10px 0 5px 0; color:#4a5568;">現在自動生成されている予約枠（受付中）</h4>
+            <div id="scheduleContainer" style="max-height:220px; overflow-y:auto;"></div>
         </div>
 
         <div class="section-block">
             <div class="header-flex"><h3>給食試食を表示する時間帯設定</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('lunchTimes')">一括削除</button></div>
             <div class="flex-input"><input type="text" id="newLunchTime" placeholder="例：09:30-13:00" style="flex:1"><button class="btn btn-sm" onclick="addMaster('lunchTimes', 'newLunchTime')">追加</button></div>
             <div class="item-list" id="listLunchTimes"></div>
-        </div>
-
-        <div class="section-block" style="background:#f7fafc; border: 1px solid #cbd5e0; border-left: 4px solid #2ecc71;">
-            <div class="header-flex">
-                <h3>⚙️ 予約枠（受付枠数）の管理</h3>
-                <button class="btn btn-danger btn-sm" onclick="clearAllSchedules()">全枠を一括削除</button>
-            </div>
-            
-            <div style="background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:6px; margin-top:8px;">
-                <div class="tab-group">
-                    <button id="tabSchSingle" class="tab-btn active" onclick="switchSchMode('single')">単発作成</button>
-                    <button id="tabSchBulk" class="tab-btn" onclick="switchSchMode('bulk')">期間一括作成</button>
-                </div>
-
-                <div id="schSingleForm">
-                    <div class="form-group"><label>希望日を選択</label><select id="schSelectDate" style="width:100%;"></select></div>
-                    <div class="form-group"><label>時間帯を選択</label><select id="schSelectTime" style="width:100%;"></select></div>
-                </div>
-
-                <div id="schBulkForm" style="display:none;">
-                    <div class="form-group">
-                        <label>作成する期間を指定</label>
-                        <div class="flex-input">
-                            <input type="date" id="schBulkStart" style="flex:1;">
-                            <span>〜</span>
-                            <input type="date" id="schBulkEnd" style="flex:1;">
-                        </div>
-                        <label style="margin-top:6px; font-weight:normal; color:#e53e3e;">
-                            <input type="checkbox" id="schExcludeWeekend" checked> 土曜日・日曜日を除外する
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>対象にする時間帯</label>
-                        <select id="schBulkTimeSelect" style="width:100%;">
-                            <option value="ALL">登録されているすべての時間帯で作る</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>初期の定員数（受付可能数）</label>
-                    <input type="number" id="schCapacity" value="2" style="width:70px;" min="1"> 名
-                </div>
-                <button class="btn btn-success" style="width:100%; margin-top:5px;" onclick="executeAddSchedule()">予約受付枠を生成して保存</button>
-            </div>
-
-            <div class="bulk-edit-box">
-                <strong style="color: #dd6b20; font-size: 13px;">✏️ 作成済み予約枠の「定員」を一括変更</strong>
-                <div class="flex-input" style="margin-top: 8px;">
-                    <span>現在あるすべての受付枠の定員を、一発で</span>
-                    <input type="number" id="bulkCapacityValue" value="3" style="width:65px;" min="1">
-                    <span>名に変更する</span>
-                </div>
-                <button class="btn btn-sm" style="background-color:#dd6b20; width:100%; margin-top:3px;" onclick="updateBulkCapacity()">すべての枠の定員を一括上書き保存</button>
-            </div>
-
-            <h4 style="margin: 15px 0 5px 0; color:#4a5568;">現在受付中の日時・枠数リスト</h4>
-            <div id="scheduleContainer" style="max-height:180px; overflow-y:auto;"></div>
         </div>
 
         <div class="section-block" style="background: #fff5f5; border: 1px solid #feb2b2;">
@@ -232,9 +194,8 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz6j2uvfFVj9qDFjjgDK31GXQJbWFSK4e7amJNS_simjbIO4CFqPXiJ_6qjl4wqDBw/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzf93Oh7L1hYTHOry1Ai8dLpvCyiu7bIG1LnMbVexSWE2qEz7MCnXEunAh-wciaJhTs/exec";
     let currentToken = "";
-    let schMode = "single";
     let state = { classes: [], lunchTimes: [], availableDates: [], availableTimes: [], schedules: [], bookings: [] };
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -267,6 +228,7 @@
                 document.getElementById('adminEmail').value = data.config.admin_email;
                 document.getElementById('deadlineDays').value = data.config.deadline_days || 0;
                 document.getElementById('forceDeadlineDatetime').value = data.config.force_deadline_datetime || "";
+                document.getElementById('bulkCapacityValue').value = data.config.default_capacity || 2;
                 
                 state.classes = data.config.classes;
                 state.lunchTimes = data.config.lunch_times;
@@ -290,7 +252,6 @@
         renderTags('availableTimes', 'listAvailableTimes');
         renderSchedules();
         renderBookings();
-        updateScheduleSelects();
     }
 
     function renderTags(key, elementId) {
@@ -304,31 +265,16 @@
         });
     }
 
-    function updateScheduleSelects() {
-        const dSelect = document.getElementById('schSelectDate');
-        const tSelect = document.getElementById('schSelectTime');
-        const bulkTSelect = document.getElementById('schBulkTimeSelect');
-        
-        dSelect.innerHTML = ''; tSelect.innerHTML = '';
-        bulkTSelect.innerHTML = '<option value="ALL">登録されているすべての時間帯で作る</option>';
-        
-        state.availableDates.forEach(d => dSelect.add(new Option(d, d)));
-        state.availableTimes.forEach(t => {
-            tSelect.add(new Option(t, t));
-            bulkTSelect.add(new Option(t, t));
-        });
-    }
-
     function renderSchedules() {
         const container = document.getElementById('scheduleContainer');
         container.innerHTML = '';
-        if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">作成された受付枠はありません。</div>'; return; }
+        if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">希望日または時間帯を設定すると、ここに自動で予約枠が生成されます。</div>'; return; }
         state.schedules.sort((a,b) => (a.date + a.time_slot).localeCompare(b.date + b.time_slot));
         state.schedules.forEach(s => {
             const card = document.createElement('div');
             card.className = 'sch-card header-flex';
-            card.innerHTML = `<div><strong>${s.date}</strong> | ${s.time_slot} (枠:${s.capacity}名 / 予約:${s.reserved_count}名)</div>
-                <button class="btn btn-danger btn-sm" onclick="deleteScheduleFromServer('${s.id}')">削除</button>`;
+            card.innerHTML = `<div><strong>${s.date}</strong> | ${s.time_slot} (定員:${s.capacity}名 / 予約済:${s.reserved_count}名)</div>
+                <span style="font-size:11px; color:#2ecc71; font-weight:bold;">● 自動連動中</span>`;
             container.appendChild(card);
         });
     }
@@ -351,44 +297,41 @@
         document.getElementById('dateRangeForm').style.display = (mode === 'range') ? 'block' : 'none';
     }
 
-    function switchSchMode(mode) {
-        schMode = mode;
-        document.getElementById('tabSchSingle').classList.toggle('active', mode === 'single');
-        document.getElementById('tabSchBulk').classList.toggle('active', mode === 'bulk');
-        document.getElementById('schSingleForm').style.display = (mode === 'single') ? 'block' : 'none';
-        document.getElementById('schBulkForm').style.display = (mode === 'bulk') ? 'block' : 'none';
-    }
-
     async function addMasterDateSingle() {
         const input = document.getElementById('newMasterDate'); if(!input.value) return;
         const formattedDate = input.value.replace(/-/g, '/');
         if(state.availableDates.includes(formattedDate)) return alert('その日付は既に登録されています。');
         state.availableDates.push(formattedDate);
         state.availableDates.sort();
-        if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; renderAll(); }
+        if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; login(currentToken); }
     }
 
     async function addMasterDateRange() {
         const startInput = document.getElementById('newMasterDateStart').value;
         const endInput = document.getElementById('newMasterDateEnd').value;
+        const excludeWeekend = document.getElementById('schExcludeWeekend').checked;
         if(!startInput || !endInput) return alert('開始日と終了日の両方を選択してください。');
         let start = new Date(startInput); let end = new Date(endInput);
         if(start > end) return alert('開始日が終了日より後になっています。');
 
         let current = new Date(start); let addedCount = 0;
         while(current <= end) {
-            let y = current.getFullYear();
-            let m = ('0' + (current.getMonth() + 1)).slice(-2);
-            let d = ('0' + current.getDate()).slice(-2);
-            let formattedStr = `${y}/${m}/${d}`;
-            if(!state.availableDates.includes(formattedStr)) { state.availableDates.push(formattedStr); addedCount++; }
+            let dayOfWeek = current.getDay(); // 0:日, 6:土
+            if(!(excludeWeekend && (dayOfWeek === 0 || dayOfWeek === 6))) {
+                let y = current.getFullYear();
+                let m = ('0' + (current.getMonth() + 1)).slice(-2);
+                let d = ('0' + current.getDate()).slice(-2);
+                let formattedStr = `${y}/${m}/${d}`;
+                if(!state.availableDates.includes(formattedStr)) { state.availableDates.push(formattedStr); addedCount++; }
+            }
             current.setDate(current.getDate() + 1);
         }
-        if(addedCount === 0) return alert('指定期間の日付はすべて登録済みです。');
+        if(addedCount === 0) return alert('指定期間内に追加できる新しい日付がありません。');
         state.availableDates.sort();
         if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) {
             document.getElementById('newMasterDateStart').value = ''; document.getElementById('newMasterDateEnd').value = '';
-            renderAll(); alert(`${addedCount}件の日付を追加しました。`);
+            alert(`${addedCount}件の日付を追加し、予約枠を全自動生成しました。`);
+            login(currentToken);
         }
     }
 
@@ -396,19 +339,31 @@
         const input = document.getElementById(inputId); const val = input.value.trim(); if(!val) return;
         if(state[key].includes(val)) return alert('既に登録されています。');
         state[key].push(val);
-        if(await sendAction("updateMaster", { key: key, list: state[key] })) { input.value = ''; renderAll(); }
+        if(await sendAction("updateMaster", { key: key, list: state[key] })) { input.value = ''; login(currentToken); }
     }
 
     async function deleteMaster(key, index) {
-        if(!confirm('この選択肢を削除しますか？（作成済みのスケジュール枠自体は消えません）')) return;
+        if(!confirm('これを削除しますか？紐づく自動予約枠もすべて同時に自動削除されます。')) return;
         state[key].splice(index, 1);
-        await sendAction("updateMaster", { key: key, list: state[key] }); renderAll();
+        if(await sendAction("updateMaster", { key: key, list: state[key] })) { login(currentToken); }
     }
 
     async function clearMaster(key) {
-        if(!confirm('本当にこの選択肢を一括削除しますか？')) return;
+        if(!confirm('本当に一括削除しますか？すべての自動予約枠がクリアされます。')) return;
         state[key] = [];
-        await sendAction("updateMaster", { key: key, list: state[key] }); renderAll();
+        if(await sendAction("updateMaster", { key: key, list: state[key] })) { login(currentToken); }
+    }
+
+    // 👥 定員の一括適用保存機能
+    async function updateBulkCapacity() {
+        const targetCapacity = Number(document.getElementById('bulkCapacityValue').value);
+        if(!targetCapacity || targetCapacity < 1) return alert('有効な定員数を入力してください。');
+        if(!confirm(`すべての予約枠の共通定員数を「${targetCapacity}名」に変更しますか？`)) return;
+
+        if(await sendAction("updateBulkCapacity", { capacity: targetCapacity })) {
+            alert('定員設定を一括更新しました！');
+            login(currentToken);
+        }
     }
 
     async function saveDeadlineConfig() {
@@ -419,72 +374,7 @@
     async function saveAccount(type) {
         const payload = { email: document.getElementById('adminEmail').value, pw: type === 'pw' ? document.getElementById('adminPassword').value : "" };
         if(type === 'pw' && !payload.pw) return alert('パスワードを入力してください');
-        if(await sendAction("saveAccount", payload)) { alert('アカウント情報を更新しました。'); if(type === 'pw') { sessionStorage.clear(); location.reload(); } }
-    }
-
-    async function executeAddSchedule() {
-        const capacity = Number(document.getElementById('schCapacity').value);
-        if(schMode === 'single') {
-            const date = document.getElementById('schSelectDate').value;
-            const time = document.getElementById('schSelectTime').value;
-            if(!date || !time) return alert('希望日と時間帯を選択してください。');
-            if(await sendAction("addSchedules", { dates: [date], time_slots: [time], capacity: capacity })) {
-                alert('予約枠を1件作成しました。'); login(currentToken);
-            }
-        } else {
-            const startInput = document.getElementById('schBulkStart').value;
-            const endInput = document.getElementById('schBulkEnd').value;
-            const timeMode = document.getElementById('schBulkTimeSelect').value;
-            const excludeWeekend = document.getElementById('schExcludeWeekend').checked;
-            
-            if(!startInput || !endInput) return alert('開始日と終了日を指定してください。');
-            let start = new Date(startInput); let end = new Date(endInput);
-            if(start > end) return alert('開始日が終了日より後になっています。');
-
-            let dates = []; let current = new Date(start);
-            while(current <= end) {
-                let dayOfWeek = current.getDay();
-                if(!(excludeWeekend && (dayOfWeek === 0 || dayOfWeek === 6))) {
-                    let y = current.getFullYear();
-                    let m = ('0' + (current.getMonth() + 1)).slice(-2);
-                    let d = ('0' + current.getDate()).slice(-2);
-                    dates.push(`${y}/${m}/${d}`);
-                }
-                current.setDate(current.getDate() + 1);
-            }
-            if(dates.length === 0) return alert('指定期間に作成対象となる日付がありません。');
-            let time_slots = (timeMode === "ALL") ? state.availableTimes : [timeMode];
-            if(time_slots.length === 0) return alert('時間帯マスターが空です。');
-
-            if(await sendAction("addSchedules", { dates: dates, time_slots: time_slots, capacity: capacity })) {
-                alert(`合計 ${dates.length * time_slots.length} 件の受付枠を一括生成しました！`);
-                login(currentToken);
-            }
-        }
-    }
-
-    // 🌟 定員の一括上書き変更機能
-    async function updateBulkCapacity() {
-        const targetCapacity = Number(document.getElementById('bulkCapacityValue').value);
-        if(!targetCapacity || targetCapacity < 1) return alert('有効な定員数を入力してください。');
-        if(state.schedules.length === 0) return alert('変更対象となる受付枠が一つもありません。');
-        
-        if(!confirm(`現在登録されているすべての受付枠（計 ${state.schedules.length} 件）の定員を一斉に「${targetCapacity}名」に変更しますか？`)) return;
-
-        if(await sendAction("updateBulkCapacity", { capacity: targetCapacity })) {
-            alert('すべての受付枠の定員を一括上書き変更しました！');
-            login(currentToken); // データを再同期
-        }
-    }
-
-    async function deleteScheduleFromServer(id) {
-        if(!confirm('この受付枠を削除しますか？')) return;
-        if(await sendAction("deleteSchedule", { id: id })) { state.schedules = state.schedules.filter(s => s.id !== id); renderAll(); }
-    }
-    
-    async function clearAllSchedules() {
-        if(!confirm('⚠️ 本当にすべての予約受付枠を一括削除しますか？\n(注意: すでに予約が入っている枠も消去されます)')) return;
-        if(await sendAction("clearAllSchedules", {})) { state.schedules = []; renderSchedules(); alert('すべての予約受付枠を削除しました。'); }
+        if(await sendAction("saveAccount", payload)) { alert('アカウント情報を更新しました。'); if(type === 'pw') { logout(); } }
     }
 
     async function deleteBookingFromServer(id) {
@@ -493,7 +383,7 @@
     }
     async function clearAllBookings() {
         if(!confirm('⚠️ 本当にすべての予約を一括削除しますか？')) return;
-        if(await sendAction("clearAllBookings", {})) { state.bookings = []; renderBookings(); }
+        if(await sendAction("clearAllBookings", {})) { login(currentToken); }
     }
 
     async function sendAction(action, data) {
