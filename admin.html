@@ -47,12 +47,14 @@
         .login-box { background: white; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; text-align: center; }
 
+        /* 🖨️ 印刷設定：予約締切エリアも含め、一覧以外の設定要素を完全に除外 */
         @media print {
             body { background: white; color: #000; padding: 0; margin: 0; }
-            .top-bar, .sidebar, .btn, th:last-child, td:last-child, .card:last-child { display: none !important; }
+            .top-bar, .sidebar, .btn, th:last-child, td:last-child, .print-exclude { display: none !important; }
             .admin-wrapper { display: block; width: 100%; }
             .main-content { border: none; box-shadow: none; padding: 0; margin: 0; width: 100%; }
-            table { width: 100%; border: 1px solid #000; font-size: 13px; }
+            table { width: 100%; border: 1px solid #000; font-size: 13px; page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
             th, td { border: 1px solid #000; padding: 8px; background: transparent !important; }
             @page { size: A4 landscape; margin: 10mm; }
         }
@@ -81,10 +83,20 @@
             <div class="card">
                 <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('classes')">一括削除</button>
                 <div class="input-row" style="margin-top: 15px;">
-                    <input type="text" id="new_class" placeholder="例：ひよこ組">
+                    <input type="text" id="new_class" placeholder="例：本園カモミール">
                     <button class="btn btn-add" onclick="addMaster('classes', 'new_class')">追加</button>
                 </div>
                 <div class="badge-container" id="classes_container"></div>
+            </div>
+
+            <h2>🍱 昼食時間設定</h2>
+            <div class="card">
+                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('lunchTimes')">一括削除</button>
+                <div class="input-row" style="margin-top: 15px;">
+                    <input type="text" id="new_lunchtime" placeholder="例：11:30-12:00">
+                    <button class="btn btn-add" onclick="addMaster('lunchTimes', 'new_lunchtime')">追加</button>
+                </div>
+                <div class="list-box" id="lunchtimes_list"></div>
             </div>
 
             <h2>📅 希望日の設定</h2>
@@ -143,7 +155,7 @@
         </div>
 
         <div class="main-content">
-            <h2>👥 現在の予約状況一覧（クラス順・最優先）</h2>
+            <h2>👥 現在の予約状況一覧（クラス指定順ソート）</h2>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px;">
                 <button class="btn btn-save" style="background-color: #2b6cb0;" onclick="window.print()">🖨️ 印刷する</button>
                 <button class="btn btn-danger" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
@@ -164,25 +176,27 @@
                 <tbody></tbody>
             </table>
 
-            <br><br>
-            <h2>⏱️ 予約締切の設定</h2>
-            <div class="card">
-                <div class="form-group">
-                    <label>① ✕日前締切設定</label>
-                    <div style="margin-top:5px;"><input type="number" id="deadline_days" min="0" style="width:80px;"> 日前</div>
+            <div class="print-exclude">
+                <br><br>
+                <h2>⏱️ 予約締切の設定</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label><strong>① ✕日前締切設定</strong></label>
+                        <div style="margin-top:5px;"><input type="number" id="deadline_days" min="0" style="width:80px;"> 日前</div>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>② 一括受付終了日時</strong></label>
+                        <div style="margin-top:5px;"><input type="datetime-local" id="force_deadline_datetime"></div>
+                    </div>
+                    <button class="btn btn-save" onclick="saveDeadlineSetting()">設定を保存</button>
                 </div>
-                <div class="form-group">
-                    <label>② 一括受付終了日時</label>
-                    <div style="margin-top:5px;"><input type="datetime-local" id="force_deadline_datetime"></div>
-                </div>
-                <button class="btn btn-save" onclick="saveDeadlineSetting()">設定を保存</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxx50fSCEqWb-p55i16OnV1yioMJiSvRkzTYXvHHH7hctzXQLhANgMu2coURT23g7bf/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzlQuA8aLxzDuysyAxCPwTEo-w7ZyYdKGDXoa4a72qV0pV75-UsQTLRJXOScRO6UeH1/exec";
     let adminToken = "";
     let activeDateTab = "individual";
 
@@ -229,6 +243,13 @@
             classesCont.innerHTML += `<span class="badge">${c} <span class="remove-icon" onclick="removeMasterItem('classes', '${c}')">×</span></span>`;
         });
 
+        // 昼食時間リスト
+        const lunchList = document.getElementById('lunchtimes_list');
+        lunchList.innerHTML = "";
+        (config.lunchTimes || []).forEach(l => {
+            lunchList.innerHTML += `<div class="list-item"><span>${l}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('lunchTimes', '${l}')">削除</button></div>`;
+        });
+
         // 希望日リスト
         const datesList = document.getElementById('dates_list');
         datesList.innerHTML = "";
@@ -248,7 +269,7 @@
         document.getElementById('bulk_capacity').value = config.defaultCapacity || 2;
         document.getElementById('admin_email_val').value = config.adminEmail || "";
 
-        // 予約一覧の描画（クラス順➔日付順➔時間順ソート）
+        // 予約一覧の描画（クラス指定順 ➔ 早い時間順ソート）
         const tbody = document.querySelector('#bookingsTable tbody');
         tbody.innerHTML = "";
         let bookingsList = config.bookings || [];
@@ -256,8 +277,14 @@
         if (bookingsList.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">現在、予約はありません。</td></tr>`;
         } else {
+            const classOrder = ["本園カモミール", "ANNEXカモミール", "メリッサ", "本園マジョラム", "ANNEXマジョラム"];
             bookingsList.sort((a, b) => {
-                if (a.childClass !== b.childClass) return a.childClass.localeCompare(b.childClass);
+                let idxA = classOrder.indexOf(a.childClass);
+                let idxB = classOrder.indexOf(b.childClass);
+                if (idxA === -1) idxA = 999;
+                if (idxB === -1) idxB = 999;
+                
+                if (idxA !== idxB) return idxA - idxB;
                 if (a.date !== b.date) return a.date.localeCompare(b.date);
                 return a.timeSlot.localeCompare(b.timeSlot);
             });
@@ -350,7 +377,7 @@
         document.getElementById('tab_individual').className = tabName === 'individual' ? 'tab active' : 'tab';
         document.getElementById('tab_bulk').className = tabName === 'bulk' ? 'tab active' : 'tab';
         document.getElementById('date_individual_form').style.display = tabName === 'individual' ? 'block' : 'none';
-        document.getElementById('date_bulk_form').style.display = tabName === 'bulk' ? 'block' : 'none';
+        document.getElementById('date_bulk_form').style.display = tabName === 'bulk' ? 'none' : 'block';
     }
     function logout() { sessionStorage.removeItem('adminToken'); location.reload(); }
 </script>
