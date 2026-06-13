@@ -6,13 +6,12 @@
     <title>保育参加 管理画面</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1050px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         h2 { border-bottom: 2px solid #4a6785; padding-bottom: 10px; color: #2c3e50; display: flex; align-items: center; gap: 10px; margin-top: 35px; }
         h2:first-of-type { margin-top: 0; }
         .card { background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 6px; padding: 25px; margin-bottom: 25px; }
         .form-row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; align-items: flex-end; }
         .form-group { flex: 1; min-width: 180px; margin-bottom: 15px; }
-        .form-group.full-width { flex: bsc; min-width: 100%; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #4a5568; font-size: 14px; }
         input[type="number"], input[type="date"], input[type="datetime-local"], input[type="password"], select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; font-size: 14px; background-color: #fff; }
         input[type="number"] { max-width: 120px; }
@@ -52,7 +51,7 @@
     
     <h2>👥 現在の予約状況一覧（希望日・時間順）</h2>
     <div class="card" style="display: flex; justify-content: flex-end; gap: 10px; border: none; background: none; padding: 0;">
-        <button class="btn-primary" onclick="window.print()">🖨️ 印刷する</button>
+        <button class="btn-primary" onclick="window.print()">🖨️ 一覧を印刷する</button>
         <button class="btn-danger" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
     </div>
     <table id="bookingsTable">
@@ -69,6 +68,25 @@
         </thead>
         <tbody></tbody>
     </table>
+
+    <h2>📅 予約枠（schedules）の設定一覧</h2>
+    <p style="color:#555; font-size:13px; margin-top:0;">登録されている日付ごとのカレンダー枠一覧です。受付の〇✕切り替えや、個別の定員数変更がその場で可能です。</p>
+    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e1e4e8; border-radius: 4px; margin-bottom: 25px;">
+        <table id="schedulesTable" style="margin-top:0;">
+            <thead style="position: sticky; top: 0; z-index: 10;">
+                <tr>
+                    <th>日付</th>
+                    <th>時間帯</th>
+                    <th>クラス</th>
+                    <th>定員数</th>
+                    <th>現在の予約数</th>
+                    <th>受付ステータス</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
     <h2>📅 新しい予約枠の個別追加</h2>
     <div class="card">
@@ -105,7 +123,6 @@
 
     <h2>⚡ 予約枠の一括自動生成</h2>
     <div class="card">
-        <p style="margin-top:0; color:#555; font-size:13px;">指定された期間（土日除く）に、全クラス・全時間帯の予約枠をスプレッドシート（schedules）へ一括自動生成します。</p>
         <div class="form-row">
             <div class="form-group">
                 <label for="gen_start">開始日</label>
@@ -169,10 +186,7 @@
 
     function attemptLogin() {
         const pw = document.getElementById('loginPw').value.trim();
-        if (!pw) {
-            alert("パスワードを入力してください。");
-            return;
-        }
+        if (!pw) { alert("パスワードを入力してください。"); return; }
 
         fetch(`${GAS_URL}?action=adminLogin&pw=${encodeURIComponent(pw)}`)
         .then(res => res.json())
@@ -216,30 +230,77 @@
             document.getElementById('bulk_capacity').value = config.default_capacity || 2;
         }
 
-        const tbody = document.querySelector('#bookingsTable tbody');
-        tbody.innerHTML = "";
-
+        // ① 予約者一覧の反映
+        const tbodyBookings = document.querySelector('#bookingsTable tbody');
+        tbodyBookings.innerHTML = "";
         if (!config.bookings || config.bookings.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>`;
-            return;
+            tbodyBookings.innerHTML = `<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>`;
+        } else {
+            config.bookings.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${b.date}</td>
+                    <td>${b.timeSlot}</td>
+                    <td>${b.childClass}</td>
+                    <td>${b.childName}</td>
+                    <td>${b.lunchNeeded}</td>
+                    <td>${b.email || 'なし'}</td>
+                    <td><button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteBooking('${b.id}')">削除</button></td>
+                `;
+                tbodyBookings.appendChild(tr);
+            });
         }
 
-        config.bookings.forEach(b => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${b.date}</td>
-                <td>${b.timeSlot}</td>
-                <td>${b.childClass}</td>
-                <td>${b.childName}</td>
-                <td>${b.lunchNeeded}</td>
-                <td>${b.email || 'なし'}</td>
-                <td><button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteBooking('${b.id}')">削除</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
+        // ② 【完全復活】カレンダー予約枠一覧（schedules）の反映
+        const tbodySchedules = document.querySelector('#schedulesTable tbody');
+        tbodySchedules.innerHTML = "";
+        if (!config.schedules || config.schedules.length === 0) {
+            tbodySchedules.innerHTML = `<tr><td colspan="7" style="text-align:center;">設定された予約枠がありません。</td></tr>`;
+        } else {
+            config.schedules.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.date}</td>
+                    <td>${s.timeSlot}</td>
+                    <td>${s.childClass}</td>
+                    <td><input type="number" value="${s.capacity}" min="0" style="width:70px; padding:4px;" id="cap_${s.id}"></td>
+                    <td>${s.currentBookings}</td>
+                    <td>
+                        <select id="status_${s.id}" style="width:80px; padding:4px;">
+                            <option value="○" ${s.status === '○' ? 'selected' : ''}>○ 受付</option>
+                            <option value="×" ${s.status === '×' ? 'selected' : ''}>× 停止</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-success" style="padding:4px 8px; font-size:12px;" onclick="updateSingleSchedule('${s.id}')">更新</button>
+                    </td>
+                `;
+                tbodySchedules.appendChild(tr);
+            });
+        }
     }
 
-    // 🛠️ 復活：枠の個別追加
+    // 🛠️ 復活：枠ごとの個別定員・ステータス更新処理
+    function updateSingleSchedule(id) {
+        const capacity = document.getElementById(`cap_${id}`).value;
+        const status = document.getElementById(`status_${id}`).value;
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "updateSchedule",
+                token: adminToken,
+                data: { id: id, capacity: Number(capacity), status: status }
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert("予約枠を更新しました。");
+            loadAdminData();
+        })
+        .catch(err => alert("更新エラー: " + err));
+    }
+
     function addSingleSchedule() {
         const date = document.getElementById('add_date').value;
         const cls = document.getElementById('add_class').value;
@@ -264,14 +325,12 @@
         .catch(err => alert("追加エラー: " + err));
     }
 
-    // 🛠️ 復活：枠の一括生成
     function generateBulkSchedules() {
         const start = document.getElementById('gen_start').value;
         const end = document.getElementById('gen_end').value;
         const cap = document.getElementById('gen_capacity').value;
 
         if(!start || !end) { alert("開始日と終了日を選択してください。"); return; }
-
         if(!confirm(`${start} ～ ${end} の期間に予約枠を自動生成しますか？`)) return;
 
         fetch(GAS_URL, {
@@ -330,7 +389,6 @@
         .catch(err => alert("保存エラー: " + err));
     }
 
-    // ✨ 安全なリセットボタン処理
     function resetDeadlineFields() {
         if (!confirm("締切設定をリセットして、すべての予約枠の締切を解除しますか？")) return;
         document.getElementById('deadline_days').value = 0;
