@@ -23,8 +23,9 @@
         button.btn-delete:hover { background: #bd2130; }
         .item-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .item-badge { background: #e1ecf4; padding: 4px 8px; border-radius: 4px; font-size: 13px; display: flex; align-items: center; gap: 6px; border: 1px solid #bce0fd; }
-        .print-btn { background: #28a745; margin-bottom: 15px; padding: 12px; font-size: 15px; width: 100%; }
+        .print-btn { background: #28a745; margin-bottom: 15px; padding: 12px; font-size: 15px; width: 48%; }
         .print-btn:hover { background: #218838; }
+        .clear-all-btn { background: #dc3545; margin-bottom: 15px; padding: 12px; font-size: 15px; width: 48%; float: right; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #e1ecf4; color: #333; }
@@ -38,6 +39,7 @@
             #printArea, #printArea * { visibility: visible; }
             #printArea { position: absolute; left: 0; top: 0; width: 100%; }
             th { background-color: #e1ecf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -46,7 +48,7 @@
 <div id="authView" class="auth-container">
     <h3 style="text-align:center; margin-top:0;">管理画面 ログイン</h3>
     <div style="margin-bottom: 15px;">
-        <label for="adminPasswordInput">パスワード (初期値: 1234)</label>
+        <label for="adminPasswordInput">パスワード</label>
         <input type="password" id="adminPasswordInput" style="width:100%;">
     </div>
     <button onclick="checkPassword()" style="width:100%; padding:10px;">ログイン</button>
@@ -62,11 +64,10 @@
             <div class="form-group">
                 <label>① 締切設定</label>
                 <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #ddd; margin-bottom:10px;">
-                    <div class="section-title">【設定方法を選択】</div>
                     <select id="deadlineType" onchange="toggleDeadlineInput()" style="width: 100%; margin-bottom: 8px;">
                         <option value="none">制限なし（いつでも予約可能）</option>
                         <option value="days">〇日前までに締切</option>
-                        <option value="datetime">指定日時で一括締切（以降全員不可）</option>
+                        <option value="datetime">指定日時で一括締切</option>
                     </select>
                     <div id="divDeadlineDays" class="hidden" style="margin-bottom: 8px;">
                         <select id="cfgDeadlineDays" style="width: 100%;">
@@ -75,7 +76,6 @@
                             <option value="3日前">3日前までに締切</option>
                             <option value="5日前">5日前までに締切</option>
                             <option value="7日前">1週間前までに締切</option>
-                            <option value="14日前">2週間前までに締切</option>
                         </select>
                     </div>
                     <div id="divDeadlineDatetime" class="hidden" style="margin-bottom: 8px;">
@@ -84,12 +84,12 @@
                 </div>
                 <div class="input-inline">
                     <button onclick="saveDeadlineSetting()" style="flex: 2;">締切を保存</button>
-                    <button class="btn-delete" onclick="clearDeadlineSetting()" style="flex: 1; font-size: 13px; padding: 8px;">締切クリア</button>
+                    <button class="btn-delete" onclick="clearDeadlineSetting()" style="flex: 1; padding: 8px;">クリア</button>
                 </div>
             </div>
             
             <div class="form-group">
-                <label>② クラス設定（1クラスずつ追加）</label>
+                <label>② クラス設定</label>
                 <div class="input-inline">
                     <input type="text" id="newClassInput" placeholder="例: ひよこ組">
                     <button onclick="addItemToList('classes', 'newClassInput', 'save_classes')">追加</button>
@@ -100,71 +100,66 @@
             <div class="form-group">
                 <label>③ 希望日設定</label>
                 <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #ddd; margin-bottom:10px;">
-                    <div class="section-title">【個別設定】カレンダーから1日ずつ追加</div>
-                    <div class="input-inline">
-                        <input type="date" id="singleDateInput">
-                        <button onclick="addDateIndividual()">個別追加</button>
-                    </div>
+                    <input type="date" id="singleDateInput">
+                    <button onclick="addDateIndividual()">個別追加</button>
                 </div>
                 <div style="background:#fff; padding:10px; border-radius:4px; border:1px solid #ddd;">
-                    <div class="section-title">【一括設定】期間を指定してまとめて追加</div>
-                    <div class="input-inline" style="flex-wrap: wrap;">
-                        <input type="date" id="startDateInput" style="flex:1;">
-                        <span style="align-self:center;">～</span>
-                        <input type="date" id="endDateInput" style="flex:1;">
-                        <button onclick="addDateBulk()" style="width:100%; margin-top:5px;">期間内を一括追加</button>
+                    <div class="input-inline">
+                        <input type="date" id="startDateInput" style="width:45%;">
+                        <span>～</span>
+                        <input type="date" id="endDateInput" style="width:45%;">
                     </div>
+                    <button onclick="addDateBulk()" style="width:100%;">一括追加</button>
                 </div>
                 <div class="item-list" id="dateList"></div>
             </div>
             
             <div class="form-group">
-                <label>④ 時間設定（1つずつ設定）</label>
+                <label>④ 時間設定</label>
                 <div class="input-inline">
-                    <input type="time" id="timeStart" value="09:00">
-                    <span style="align-self: center;">～</span>
-                    <input type="time" id="timeEnd" value="11:00">
-                    <button onclick="addTimeIndividual()">時間枠を追加</button>
+                    <input type="time" id="timeStart" value="09:00"><span>～</span><input type="time" id="timeEnd" value="11:00">
+                    <button onclick="addTimeIndividual()">追加</button>
                 </div>
                 <div class="item-list" id="timeList"></div>
             </div>
             
             <div class="form-group">
-                <label>⑤ 昼食時間設定（設定時間を選ぶと昼食選択を表示）</label>
+                <label>⑤ 昼食時間設定</label>
                 <div class="input-inline">
-                    <select id="cfgLunchTime"><option value="">選択肢がありません</option></select>
-                    <button onclick="saveSingleField('save_lunch', document.getElementById('cfgLunchTime').value)">昼食時間を設定</button>
+                    <select id="cfgLunchTime"><option value="">選択肢なし</option></select>
+                    <button onclick="saveSingleField('save_lunch', document.getElementById('cfgLunchTime').value)">設定</button>
                 </div>
             </div>
             
             <div class="form-group">
-                <label>⑥ 定員数設定（共通上限数）</label>
+                <label>⑥ 定員数設定</label>
                 <div class="input-inline">
                     <input type="number" id="cfgLimit" value="3" min="1">
-                    <button onclick="saveSingleField('save_limit', document.getElementById('cfgLimit').value)">定員数を保存</button>
+                    <button onclick="saveSingleField('save_limit', document.getElementById('cfgLimit').value)">保存</button>
                 </div>
             </div>
             
             <div class="form-group">
-                <label>⑦ 管理者用通知先メールアドレス設定</label>
+                <label>⑦ 通知先メール設定</label>
                 <div class="input-inline">
-                    <input type="email" id="cfgAdminEmail" placeholder="園の受信用アドレス">
-                    <button onclick="saveSingleField('save_admin_email', document.getElementById('cfgAdminEmail').value)">アドレス保存</button>
+                    <input type="email" id="cfgAdminEmail">
+                    <button onclick="saveSingleField('save_admin_email', document.getElementById('cfgAdminEmail').value)">保存</button>
                 </div>
             </div>
             
             <div class="form-group">
-                <label>⑧ 管理画面パスワード設定</label>
+                <label>⑧ パスワード設定</label>
                 <div class="input-inline">
                     <input type="password" id="cfgPassword">
-                    <button onclick="saveSingleField('save_password', document.getElementById('cfgPassword').value)">PW変更</button>
+                    <button onclick="saveSingleField('save_password', document.getElementById('cfgPassword').value)">変更</button>
                 </div>
             </div>
         </div>
         
         <div class="admin-right">
             <h3>予約状況一覧</h3>
-            <button class="print-btn" onclick="window.print()">予約状況一覧のみ印刷する</button>
+            <button class="print-btn" onclick="window.print()">印刷する</button>
+            <button class="clear-all-btn" onclick="clearAllReservations()">予約データを一括削除</button>
             
             <div id="printArea">
                 <table id="reservationTable">
@@ -176,6 +171,7 @@
                             <th>園児氏名</th>
                             <th>昼食</th>
                             <th>保護者メール</th>
+                            <th class="no-print">操作</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -186,8 +182,8 @@
 </div>
 
 <script>
-    // ⚠️【差し替え】生成したGASのウェブアプリURLをここに貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwkHUKy8XJWxnu-jwz0aAYnCkycfTQ-t7Kxl6lTMOm4ra561FiuO0ilMbW_OOkoSXgh/exec";
+    // ⚠️【差し替え】新しくデプロイしたGASのウェブアプリURLを貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQVTdbT15IgRiQbNRXeFxo34hyFQkpY9EsCAFgZWqlJfiLj8oZ1CpitH0fiFZLK2UB/exec";
     let systemConfig = {};
 
     async function loadAdminData() {
@@ -196,7 +192,6 @@
             const data = await response.json();
             systemConfig = data.config || {};
             
-            // 締切設定の画面復元ロジック
             const dlValue = systemConfig.deadline || '';
             const dlTypeSelect = document.getElementById('deadlineType');
             if (!dlValue) {
@@ -214,37 +209,39 @@
             document.getElementById('cfgAdminEmail').value = systemConfig.adminEmail || '';
             document.getElementById('cfgPassword').value = systemConfig.password || '1234';
 
-            // バッジ生成
             renderBadges('classList', systemConfig.classes, 'save_classes');
             renderBadges('dateList', systemConfig.dates, 'save_dates');
             renderBadges('timeList', systemConfig.times, 'save_times');
 
-            // 昼食セレクトボックスの連動更新
             const lunchSelect = document.getElementById('cfgLunchTime');
             lunchSelect.innerHTML = '<option value="">-- 指定なし --</option>';
             if(systemConfig.times) {
                 systemConfig.times.split(',').forEach(t => {
                     const selected = (t.trim() === systemConfig.lunchTime) ? 'selected' : '';
-                    lunchSelect.innerHTML += `<option value="${t.trim()}" ${selected}>${t.trim()}</option>`;
+                    lunchSelect.innerHTML += `<option value="${t.trim()}">${t.trim()}</option>`;
                 });
             }
 
-            // テーブル描画（クラス、日付、時間の順ソート反映）
             const tbody = document.querySelector('#reservationTable tbody');
             tbody.innerHTML = '';
             if(data.reservations && data.reservations.length > 0) {
                 data.reservations.forEach(res => {
+                    // 日付変換（万が一ISO表記になっても綺麗に直す）
+                    let dDisplay = res.date;
+                    if(dDisplay.includes('T')) dDisplay = dDisplay.split('T')[0];
+
                     tbody.innerHTML += `<tr>
                         <td>${res.className}</td>
-                        <td>${res.date}</td>
+                        <td>${dDisplay}</td>
                         <td>${res.timeSlot}</td>
                         <td>${res.childName}</td>
                         <td>${res.lunch}</td>
                         <td>${res.email}</td>
+                        <td class="no-print"><button class="btn-delete" onclick="deleteSingleReservation('${res.childName}','${res.date}','${res.timeSlot}')">削除</button></td>
                     </tr>`;
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">現在、予約はありません。</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">現在、予約はありません。</td></tr>';
             }
         } catch (error) {
             alert("データの取得に失敗しました。");
@@ -263,27 +260,41 @@
         const type = document.getElementById('deadlineType').value;
         let finalValue = "";
         if (type === 'days') finalValue = document.getElementById('cfgDeadlineDays').value;
-        if (type === 'datetime') {
-            finalValue = document.getElementById('cfgDeadlineDatetime').value;
-            if(!finalValue) return alert("締切日時を指定してください。");
-        }
+        if (type === 'datetime') finalValue = document.getElementById('cfgDeadlineDatetime').value;
         sendRawValue('save_deadline', finalValue);
     }
 
     function clearDeadlineSetting() {
-        if(confirm("締切設定をクリア（制限なし）にしますか？")) {
-            document.getElementById('deadlineType').value = 'none';
-            toggleDeadlineInput();
+        if(confirm("締切をクリアしますか？")) {
             sendRawValue('delete_deadline', '');
         }
+    }
+
+    async function deleteSingleReservation(name, date, time) {
+        if(!confirm(name + " 様の予約を削除しますか？")) return;
+        try {
+            const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ type: 'delete_reservation', childName: name, date: date, timeSlot: time }) });
+            const res = await response.json();
+            alert(res.message);
+            loadAdminData();
+        } catch(e) { alert("削除に失敗しました。"); }
+    }
+
+    async function clearAllReservations() {
+        if(!confirm("⚠️本当にすべての予約データを削除しますか？スプレッドシートの中身もクリアされます。")) return;
+        try {
+            const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ type: 'clear_all_reservations' }) });
+            const res = await response.json();
+            alert(res.message);
+            loadAdminData();
+        } catch(e) { alert("一括削除に失敗しました。"); }
     }
 
     function renderBadges(containerId, commaString, updateActionType) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if(!commaString) return;
-        const items = commaString.split(',');
-        items.forEach((item, index) => {
+        commaString.split(',').forEach((item, index, arr) => {
             if(!item.trim()) return;
             const badge = document.createElement('div');
             badge.className = 'item-badge';
@@ -292,8 +303,8 @@
             delBtn.className = 'btn-delete';
             delBtn.innerText = '×';
             delBtn.onclick = () => {
-                items.splice(index, 1);
-                sendRawValue(updateActionType, items.join(','));
+                arr.splice(index, 1);
+                sendRawValue(updateActionType, arr.join(','));
             };
             badge.appendChild(delBtn);
             container.appendChild(badge);
@@ -301,76 +312,61 @@
     }
 
     function addItemToList(configKey, inputId, actionType) {
-        const inputEl = document.getElementById(inputId);
-        const val = inputEl.value.trim();
-        if(!val) return;
-        let currentItems = systemConfig[configKey] ? systemConfig[configKey].split(',') : [];
-        if(currentItems.includes(val)) return alert("既に登録されています。");
-        currentItems.push(val);
-        sendRawValue(actionType, currentItems.join(','));
-        inputEl.value = '';
+        const el = document.getElementById(inputId);
+        if(!el.value.trim()) return;
+        let items = systemConfig[configKey] ? systemConfig[configKey].split(',') : [];
+        if(items.includes(el.value.trim())) return alert("登録済みです");
+        items.push(el.value.trim());
+        sendRawValue(actionType, items.join(','));
+        el.value = '';
     }
 
     function addDateIndividual() {
-        const input = document.getElementById('singleDateInput').value;
-        if(!input) return alert("日付を選択してください。");
-        addItemDirect('dates', input, 'save_dates');
+        const d = document.getElementById('singleDateInput').value;
+        if(!d) return;
+        let items = systemConfig.dates ? systemConfig.dates.split(',') : [];
+        if(!items.includes(d)) items.push(d);
+        sendRawValue('save_dates', items.join(','));
     }
 
     function addDateBulk() {
-        const startStr = document.getElementById('startDateInput').value;
-        const endStr = document.getElementById('endDateInput').value;
-        if(!startStr || !endStr) return alert("開始日と終了日を選択してください。");
-        let start = new Date(startStr);
-        let end = new Date(endStr);
-        if(start > end) return alert("開始日が終了日より後の日付になっています。");
-        let currentItems = systemConfig.dates ? systemConfig.dates.split(',') : [];
+        const s = document.getElementById('startDateInput').value;
+        const e = document.getElementById('endDateInput').value;
+        if(!s || !e) return;
+        let start = new Date(s), end = new Date(e);
+        let items = systemConfig.dates ? systemConfig.dates.split(',') : [];
         while(start <= end) {
-            let yyyy = start.getFullYear();
-            let mm = String(start.getMonth() + 1).padStart(2, '0');
-            let dd = String(start.getDate()).padStart(2, '0');
-            let dateString = `${yyyy}-${mm}-${dd}`;
-            if(!currentItems.includes(dateString)) currentItems.push(dateString);
+            let y = start.getFullYear(), m = String(start.getMonth()+1).padStart(2,'0'), d = String(start.getDate()).padStart(2,'0');
+            let str = `${y}-${m}-${d}`;
+            if(!items.includes(str)) items.push(str);
             start.setDate(start.getDate() + 1);
         }
-        sendRawValue('save_dates', currentItems.join(','));
+        sendRawValue('save_dates', items.join(','));
     }
 
     function addTimeIndividual() {
-        const start = document.getElementById('timeStart').value;
-        const end = document.getElementById('timeEnd').value;
-        if(!start || !end) return alert("時間を入力してください。");
-        addItemDirect('times', `${start}-${end}`, 'save_times');
+        const s = document.getElementById('timeStart').value, e = document.getElementById('timeEnd').value;
+        let items = systemConfig.times ? systemConfig.times.split(',') : [];
+        if(!items.includes(`${s}-${e}`)) items.push(`${s}-${e}`);
+        sendRawValue('save_times', items.join(','));
     }
 
-    function addItemDirect(configKey, val, actionType) {
-        let currentItems = systemConfig[configKey] ? systemConfig[configKey].split(',') : [];
-        if(currentItems.includes(val)) return alert("既に登録されています。");
-        currentItems.push(val);
-        sendRawValue(actionType, currentItems.join(','));
-    }
-
-    function saveSingleField(type, value) { sendRawValue(type, value); }
+    function saveSingleField(type, val) { sendRawValue(type, val); }
 
     async function sendRawValue(type, value) {
         try {
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ type: type, value: value })
-            });
-            const res = await response.json();
-            if(res.status === "success") { loadAdminData(); } else { alert("エラー: " + res.message); }
-        } catch (error) { alert("通信に失敗しました。"); }
+            const r = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ type: type, value: value }) });
+            const res = await r.json();
+            if(res.status === "success") loadAdminData();
+        } catch (e) { alert("通信エラー"); }
     }
 
     function checkPassword() {
-        const input = document.getElementById('adminPasswordInput').value;
-        if(input === (systemConfig.password || "1234")) {
+        if(document.getElementById('adminPasswordInput').value === (systemConfig.password || "1234")) {
             document.getElementById('authView').classList.add('hidden');
             document.getElementById('mainView').classList.remove('hidden');
-        } else { alert('パスワードが正しくありません。'); }
+        } else { alert('パスワードが違います'); }
     }
-
     window.onload = loadAdminData;
 </script>
 </body>
