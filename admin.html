@@ -6,26 +6,59 @@
     <title>保育参加 管理画面</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        h2 { border-bottom: 2px solid #4a6785; padding-bottom: 10px; color: #2c3e50; display: flex; align-items: center; gap: 10px; }
-        .card { background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 6px; padding: 20px; margin-bottom: 25px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #4a5568; }
-        input[type="number"], input[type="datetime-local"], input[type="password"] { width: 100%; max-width: 300px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        button { padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .btn-primary { background-color: #4CAF50; color: white; }
-        .btn-primary:hover { background-color: #45a049; }
-        .btn-danger { background-color: #f44336; color: white; }
-        .btn-danger:hover { background-color: #da190b; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #e1e4e8; padding: 12px; text-align: left; }
-        th { background-color: #f2f2f2; color: #4a5568; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-box { background: white; padding: 4px 30px 30px 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .login-box h3 { margin-bottom: 20px; color: #2c3e50; }
-        .login-box input { width: 80%; padding: 10px; margin-bottom: 20px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; }
+        .container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { border-bottom: 2px solid #4a6785; padding-bottom: 10px; color: #2c3e50; display: flex; align-items: center; gap: 10px; margin-top: 30px; }
+        .card { background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 6px; padding: 25px; margin-bottom: 25px; }
+        
+        /* ⚙️ 上部ボタンエリアの改善 */
+        .top-actions { display: flex; justify-content: flex-end; gap: 15px; margin-bottom: 20px; }
+        
+        /* 📝 フォームまわりの改善 */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #4a5568; line-height: 1.4; }
+        .input-inline { display: flex; align-items: center; gap: 10px; }
+        
+        input[type="number"], input[type="datetime-local"], input[type="password"] { 
+            padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; font-size: 15px; 
+        }
+        input[type="number"] { width: 100px; }
+        input[type="datetime-local"] { width: 100%; max-width: 320px; }
+        
+        /* 🔘 ボタンデザインの改善 */
+        .btn-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        button { padding: 10px 24px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-primary { background-color: #2b6cb0; color: white; }
+        .btn-primary:hover { background-color: #1a4976; }
+        .btn-success { background-color: #4CAF50; color: white; }
+        .btn-success:hover { background-color: #45a049; }
+        .btn-danger { background-color: #e53e3e; color: white; }
+        .btn-danger:hover { background-color: #c53030; }
+        
+        /* 📊 テーブル表示の徹底的な崩れ防止 */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 4px; border: 1px solid #e1e4e8; }
+        table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
+        th, td { padding: 14px 12px; text-align: left; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        th { background-color: #f7fafc; color: #4a5568; font-weight: bold; border-bottom: 2px solid #e1e4e8; }
+        td { border-bottom: 1px solid #e1e4e8; }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
+        
+        /* 列の幅をパーセンテージで固定して潰れを防止 */
+        th:nth-child(1), td:nth-child(1) { width: 14%; } /* 希望日 */
+        th:nth-child(2), td:nth-child(2) { width: 15%; } /* 時間帯 */
+        th:nth-child(3), td:nth-child(3) { width: 18%; } /* クラス */
+        th:nth-child(4), td:nth-child(4) { width: 16%; } /* 園児氏名 */
+        th:nth-child(5), td:nth-child(5) { width: 13%; } /* 給食試食 */
+        th:nth-child(6), td:nth-child(6) { width: 16%; } /* メールアドレス */
+        th:nth-child(7), td:nth-child(7) { width: 8%;  text-align: center; } /* 操作 */
+
+        /* ログイン画面 */
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: white; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); max-width: 400px; width: 90%; }
+        .login-box h3 { margin-top: 0; margin-bottom: 15px; color: #2c3e50; font-size: 22px; }
+        .login-box p { color: #718096; font-size: 14px; margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; box-sizing: border-box; text-align: center; }
+        .login-box button { width: 100%; padding: 12px; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -35,48 +68,51 @@
         <h3>🔑 管理者ログイン</h3>
         <p>スプレッドシートに設定されているパスワードを入力してください。</p>
         <input type="password" id="loginPw" placeholder="パスワードを入力">
-        <br>
-        <button class="btn-primary" onclick="attemptLogin()">ログイン</button>
+        <button class="btn-success" onclick="attemptLogin()">ログイン</button>
     </div>
 </div>
 
 <div class="container" id="mainContent" style="display: none;">
     <h2>👥 現在の予約状況一覧（希望日・時間順）</h2>
-    <div class="card" style="display: flex; justify-content: flex-end; gap: 10px; border: none; background: none; padding: 0;">
-        <button class="btn-primary" style="background-color: #2b6cb0;" onclick="window.print()">🖨️ 印刷する</button>
+    <div class="top-actions">
+        <button class="btn-primary" onclick="window.print()">🖨️ 一覧を印刷する</button>
         <button class="btn-danger" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
     </div>
 
-    <table id="bookingsTable">
-        <thead>
-            <tr>
-                <th>希望日</th>
-                <th>時間帯</th>
-                <th>クラス</th>
-                <th>園児氏名</th>
-                <th>給食試食</th>
-                <th>メールアドレス</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            </tbody>
-    </table>
-
-    <br><br>
+    <div class="table-responsive">
+        <table id="bookingsTable">
+            <thead>
+                <tr>
+                    <th>希望日</th>
+                    <th>時間帯</th>
+                    <th>クラス</th>
+                    <th>園児氏名</th>
+                    <th>給食試食</th>
+                    <th>メールアドレス</th>
+                    <th style="text-align: center;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
 
     <h2>⏱️ 予約締切の設定</h2>
     <div class="card">
         <div class="form-group">
             <label for="deadline_days">① ✕日前締切設定（指定された日数未満の予約をブロックします）</label>
-            <input type="number" id="deadline_days" min="0" value="0"> 日前
+            <div class="input-inline">
+                <input type="number" id="deadline_days" min="0" value="0">
+                <span>日前から予約不可にする</span>
+            </div>
         </div>
         <div class="form-group">
             <label for="force_deadline_datetime">② 一括受付終了日時（指定日時以降、すべての予約受付を終了します）</label>
             <input type="datetime-local" id="force_deadline_datetime">
         </div>
         <div class="btn-group">
-            <button class="btn-primary" onclick="saveDeadline()">設定を保存</button>
+            <button class="btn-success" onclick="saveDeadline()">設定を保存</button>
+            <button class="btn-danger" style="background-color: #ed8936;" onclick="resetDeadline()">締切をリセット（解除）</button>
         </div>
     </div>
 </div>
@@ -87,7 +123,6 @@
 
     let adminToken = "";
 
-    // ページ読み込み時に実行
     window.onload = function() {
         const savedToken = sessionStorage.getItem('adminToken');
         if (savedToken) {
@@ -96,7 +131,6 @@
         }
     };
 
-    // ログイン処理
     function attemptLogin() {
         const pw = document.getElementById('loginPw').value.trim();
         if (!pw) {
@@ -120,7 +154,6 @@
         .catch(err => alert("通信エラーが発生しました: " + err));
     }
 
-    // データの読み込み
     function loadAdminData() {
         fetch(`${GAS_URL}?action=adminLogin&pw=${encodeURIComponent(adminToken)}`)
         .then(res => res.json())
@@ -136,7 +169,6 @@
         });
     }
 
-    // 画面へのデータ反映
     function renderData(config) {
         if(document.getElementById('deadline_days')) {
             document.getElementById('deadline_days').value = config.deadline_days || 0;
@@ -149,7 +181,7 @@
         tbody.innerHTML = "";
 
         if (!config.bookings || config.bookings.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color: #718096;">現在、予約はありません。</td></tr>`;
             return;
         }
 
@@ -161,14 +193,13 @@
                 <td>${b.childClass}</td>
                 <td>${b.childName}</td>
                 <td>${b.lunchNeeded}</td>
-                <td>${b.email || 'なし'}</td>
-                <td><button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteBooking('${b.id}')">削除</button></td>
+                <td style="font-size: 13px;">${b.email || 'なし'}</td>
+                <td style="text-align: center;"><button class="btn-danger" style="padding:5px 10px; font-size:12px; font-weight:normal;" onclick="deleteBooking('${b.id}')">削除</button></td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // 締切設定の保存
     function saveDeadline() {
         const days = document.getElementById('deadline_days').value;
         const datetime = document.getElementById('force_deadline_datetime').value;
@@ -188,7 +219,29 @@
         .catch(err => alert("保存エラー: " + err));
     }
 
-    // 1件の予約を削除
+    function resetDeadline() {
+        if (!confirm("締切設定をリセットして、すべての予約枠の締切を解除しますか？")) {
+            return;
+        }
+
+        document.getElementById('deadline_days').value = 0;
+        document.getElementById('force_deadline_datetime').value = "";
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "saveDeadline",
+                token: adminToken,
+                data: { deadlineDays: 0, forceDeadlineDatetime: "" }
+            })
+        })
+        .then(() => {
+            alert("締切設定をリセットしました。すべての枠で申込が可能になりました。");
+            loadAdminData();
+        })
+        .catch(err => alert("リセットエラー: " + err));
+    }
+
     function deleteBooking(id) {
         if (!confirm("この予約を削除してもよろしいですか？（スプレッドシートからも消去されます）")) return;
 
@@ -207,7 +260,6 @@
         .catch(err => alert("削除エラー: " + err));
     }
 
-    // すべての予約を一括クリア
     function clearAllBookings() {
         if (!confirm("🚨【警告】本当に全ての予約データを削除しますか？この操作は取り消せません。")) return;
 
