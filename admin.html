@@ -59,7 +59,6 @@
 </div>
 
 <div id="adminContent" class="main-layout">
-    
     <div class="left-col no-print">
         <div class="header-flex">
             <h2>保育参加 設定画面</h2>
@@ -74,17 +73,14 @@
 
         <div class="section-block" style="border-left: 4px solid #3182ce;">
             <div class="header-flex"><h3>📅 希望日の設定（各クラス連動）</h3><button class="btn btn-danger btn-sm" onclick="clearMaster('availableDates')">全希望日を一括削除</button></div>
-            
             <div class="tab-group">
                 <button id="tabSingle" class="tab-btn active" onclick="switchDateMode('single')">個別追加</button>
                 <button id="tabRange" class="tab-btn" onclick="switchDateMode('range')">🌟 期間一括追加</button>
             </div>
-
             <div id="dateSingleForm" class="flex-input">
                 <input type="date" id="newMasterDate" style="flex:1;">
                 <button class="btn btn-sm" onclick="addMasterDateSingle()">追加</button>
             </div>
-
             <div id="dateRangeForm" style="display:none; margin-bottom: 10px;">
                 <div class="flex-input">
                     <input type="date" id="newMasterDateStart" style="flex:1;">
@@ -96,7 +92,6 @@
                 </label>
                 <button class="btn btn-sm" style="width:100%; margin-top:5px;" onclick="addMasterDateRange()">指定期間をすべて追加</button>
             </div>
-
             <div class="item-list" id="listAvailableDates"></div>
         </div>
 
@@ -111,7 +106,6 @@
 
         <div class="section-block" style="background:#f7fafc; border: 1px solid #cbd5e0; border-left: 4px solid #2ecc71;">
             <h3>⚙️ 各クラスごとの予約枠・定員設定</h3>
-            
             <div class="bulk-edit-box">
                 <strong style="color: #dd6b20; font-size: 13px;">👥 全クラス・全時間枠の「共通定員数」を設定</strong>
                 <div class="flex-input" style="margin-top: 8px;">
@@ -121,7 +115,6 @@
                 </div>
                 <button class="btn btn-sm" style="background-color:#dd6b20; width:100%; margin-top:3px;" onclick="updateBulkCapacity()">全枠に定員数を一括適用</button>
             </div>
-
             <h4 style="margin: 10px 0 5px 0; color:#4a5568;">現在の自動生成枠一覧（クラス別）</h4>
             <div id="scheduleContainer" style="max-height:240px; overflow-y:auto;"></div>
         </div>
@@ -194,7 +187,7 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyeCdxrb6axEmbUKtLBEzyulO52FCbfTsQ6WY37mhNMt9TSa3WQz_NL4-f1ZxLruKk/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyt3QAjWbhhyEP2o6b-CEkC2Wx2X6XbxCeNK0kuxs93_cpk8tWBkXJJymK1V-u5T4E/exec";
     let currentToken = "";
     let state = { classes: [], lunchTimes: [], availableDates: [], availableTimes: [], schedules: [], bookings: [] };
 
@@ -309,7 +302,6 @@
         if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; login(currentToken); }
     }
 
-    // 🌟 期間一括追加のロジックのみをベースコードから安全に修正
     async function addMasterDateRange() {
         const startInput = document.getElementById('newMasterDateStart').value;
         const endInput = document.getElementById('newMasterDateEnd').value;
@@ -326,8 +318,6 @@
                 let y = current.getFullYear();
                 let m = ('0' + (current.getMonth() + 1)).slice(-2);
                 let d = ('0' + current.getDate()).slice(-2);
-                
-                // 🌟 ここで日付オブジェクトが不正に混入するのを防ぎ、シンプルな文字列「yyyy/MM/dd」だけを配列に格納します
                 let formattedStr = `${y}/${m}/${d}`;
                 if(!state.availableDates.includes(formattedStr)) { state.availableDates.push(formattedStr); addedCount++; }
             }
