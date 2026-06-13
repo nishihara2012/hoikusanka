@@ -3,197 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>保育参加 予約システム</title>
+    <title>保育参加 申し込みフォーム</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f7f9fa; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h2 { text-align: center; color: #ff6f61; margin-bottom: 25px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f7fafc; color: #2d3748; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .form-container { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 500px; box-sizing: border-box; }
+        h2 { text-align: center; color: #1a202c; margin-top: 0; margin-bottom: 24px; font-size: 22px; }
         .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
-        input[type="text"], input[type="email"], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        .lunch-box { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 6px; display: none; }
-        .lunch-title { font-weight: bold; color: #856404; margin-bottom: 8px; }
-        .radio-group { display: flex; gap: 20px; }
-        button { width: 100%; background-color: #ff6f61; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        button:hover { background-color: #ee5e50; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #loading { text-align: center; color: #666; font-size: 14px; margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #4a5568; }
+        input[type="text"], input[type="email"], select { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 15px; background-color: #fff; }
+        input[type="text"]:focus, input[type="email"]:focus, select:focus { outline: none; border-color: #3182ce; box-shadow: 0 0 0 3px rgba(66,153,225,0.15); }
+        .radio-group { display: flex; gap: 15px; margin-top: 5px; }
+        .radio-label { display: flex; align-items: center; gap: 6px; font-size: 15px; cursor: pointer; }
+        .radio-label input { margin: 0; width: 18px; height: 18px; }
+        .btn-submit { width: 100%; background-color: #3182ce; color: white; border: none; padding: 14px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+        .btn-submit:hover { background-color: #2b6cb0; }
+        .btn-submit:disabled { background-color: #a0aec0; cursor: not-allowed; }
+        .loading { text-align: center; color: #718096; font-size: 14px; margin-top: 10px; display: none; }
+        .lunch-box { background-color: #ebf8ff; border: 1px solid #bee3f8; padding: 15px; border-radius: 6px; margin-top: 15px; display: none; }
+        .lunch-box p { margin: 0 0 8px 0; font-size: 13px; color: #2b6cb0; font-weight: bold; }
+        .error-msg { color: #e53e3e; font-size: 13px; margin-top: 4px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>保育参加 予約フォーム</h2>
-    <div id="loading">設定データを読み込み中...</div>
-    
-    <form id="bookingForm" style="display: none;">
+<div class="form-container">
+    <h2>保育参加 申し込み</h2>
+    <form id="bookingForm" onsubmit="submitForm(event)">
+        
         <div class="form-group">
             <label for="childClass">クラス</label>
-            <select id="childClass" required>
+            <select id="childClass" required onchange="onClassOrDateChanged()">
                 <option value="">選択してください</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="childName">お子様のお名前</label>
-            <input type="text" id="childName" placeholder="山田 太郎" required>
+            <label for="childName">園児氏名（姓名）</label>
+            <input type="text" id="childName" placeholder="例：山田 太郎" required>
         </div>
 
         <div class="form-group">
             <label for="bookingDate">希望日</label>
-            <select id="bookingDate" required>
-                <option value="">選択してください</option>
+            <select id="bookingDate" required disabled onchange="onDateChanged()">
+                <option value="">クラスを先に選択してください</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="timeSlot">希望時間</label>
-            <select id="timeSlot" required disabled>
-                <option value="">まず希望日を選択してください</option>
+            <label for="timeSlot">時間帯</label>
+            <select id="timeSlot" required disabled onchange="onTimeSlotChanged()">
+                <option value="">希望日を先に選択してください</option>
             </select>
+            <div id="timeSlotError" class="error-msg">❌ 選択した時間帯は満員です。別の日時を選択してください。</div>
         </div>
 
-        <div class="form-group lunch-box" id="lunchSection">
-            <div class="lunch-title">給食の試食（420円）</div>
+        <div id="lunchSection" class="lunch-box">
+            <p>🍴 この時間帯は給食の試食（1食420円）が可能です。</p>
+            <label>給食の試食を希望しますか？</label>
             <div class="radio-group">
-                <label><input type="radio" name="lunch" value="あり"> 必要（試食する）</label>
-                <label><input type="radio" name="lunch" value="なし" checked> 不要</label>
+                <label class="radio-label"><input type="radio" name="lunchNeeded" value="希望する"> 希望する</label>
+                <label class="radio-label"><input type="radio" name="lunchNeeded" value="希望しない" checked> 希望しない</label>
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="email">メールアドレス（予約完了通知用）</label>
-            <input type="email" id="email" placeholder="example@hoiku.com" required>
+        <div class="form-group" style="margin-top:20px;">
+            <label for="email">保護者メールアドレス（確認メール送信用）</label>
+            <input type="email" id="email" placeholder="example@email.com" required>
         </div>
 
-        <button type="submit">予約を確定する</button>
+        <button type="submit" id="submitBtn" class="btn-submit" disabled>申し込む</button>
+        <div id="loadingMsg" class="loading">データを送信中。しばらくお待ちください...</div>
     </form>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxD-QW5_et3t3qV5f8cpyuIHRP-2OuHb1YS4HpymsoyAcV9SRo5XqmwfUIzepNHnnvW/exec";
-    let masterData = {};
+    let masterSchedules = [];
+    let lunchTimes = [];
 
-    function formatJapaneseDate(dateStr) {
-        try {
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
-            const y = d.getFullYear();
-            const m = ('0' + (d.getMonth() + 1)).slice(-2);
-            const date = ('0' + d.getDate()).slice(-2);
-            return `${y}/${m}/${date}(${dayOfWeek})`;
-        } catch(e) { return dateStr; }
-    }
-
+    // 画面読み込み時に初期データを取得
     window.addEventListener('DOMContentLoaded', async () => {
         try {
             const response = await fetch(`${GAS_URL}?action=getInitialData`);
-            masterData = await response.json();
+            const data = await response.json();
             
-            // 該当するスケジュールがない（一括締切など）の場合
-            if(!masterData.classes || masterData.classes.length === 0) {
-                document.getElementById('loading').innerHTML = '<b style="color:red;">現在、すべての保育参加予約の受付を終了しております。</b>';
+            if (!data.classes || data.classes.length === 0) {
+                document.getElementById('bookingForm').innerHTML = "<p style='text-align:center; color:#e53e3e; font-weight:bold;'>現在、案内できる保育参加の受付枠がないか、一括締め切り時間を過ぎています。</p>";
                 return;
             }
 
+            masterSchedules = data.schedules;
+            lunchTimes = data.lunch_times;
+
+            // クラスの選択肢を生成
             const classSelect = document.getElementById('childClass');
-            masterData.classes.forEach(c => classSelect.add(new Option(c, c)));
-
-            const dateSelect = document.getElementById('bookingDate');
-            const uniqueDates = [...new Set(masterData.schedules.map(s => s.date))].sort();
-            uniqueDates.forEach(d => {
-                dateSelect.add(new Option(formatJapaneseDate(d), d));
+            data.classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                classSelect.appendChild(opt);
             });
-
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('bookingForm').style.display = 'block';
-        } catch (error) {
-            document.getElementById('loading').innerText = 'データの読み込みに失敗しました。再読み込みしてください。';
+        } catch (e) {
+            alert('初期データの読み込みに失敗しました。時間をおいて再度お試しください。');
         }
     });
 
-    document.getElementById('bookingDate').addEventListener('change', (e) => {
-        const selectedDate = e.target.value;
+    // クラスが変更されたら「そのクラスが存在する希望日」を重複なく抽出してセット
+    function onClassOrDateChanged() {
+        const targetClass = document.getElementById('childClass').value;
+        const dateSelect = document.getElementById('bookingDate');
+        const timeSelect = document.getElementById('timeSlot');
+        
+        dateSelect.innerHTML = '<option value="">選択してください</option>';
+        timeSelect.innerHTML = '<option value="">希望日を先に選択してください</option>';
+        timeSelect.disabled = true;
+        document.getElementById('lunchSection').style.display = 'none';
+        document.getElementById('submitBtn').disabled = true;
+
+        if (!targetClass) { dateSelect.disabled = true; return; }
+
+        // 選択されたクラスに該当する日付のみを抽出して重複カット
+        let availableDates = masterSchedules
+            .filter(s => s.target_class === targetClass)
+            .map(s => s.date);
+        
+        // 重複を完全に削除（Unique化）
+        let uniqueDates = [...new Set(availableDates)].sort();
+
+        if(uniqueDates.length === 0) {
+            dateSelect.innerHTML = '<option value="">選択可能な日付がありません</option>';
+            dateSelect.disabled = true;
+            return;
+        }
+
+        uniqueDates.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d; opt.textContent = d;
+            dateSelect.appendChild(opt);
+        });
+        dateSelect.disabled = false;
+    }
+
+    // 希望日が変更されたら「そのクラス・その日の時間帯」を重複なく抽出してセット
+    function onDateChanged() {
+        const targetClass = document.getElementById('childClass').value;
+        const targetDate = document.getElementById('bookingDate').value;
         const timeSelect = document.getElementById('timeSlot');
         
         timeSelect.innerHTML = '<option value="">選択してください</option>';
         document.getElementById('lunchSection').style.display = 'none';
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('timeSlotError').style.display = 'none';
 
-        if (!selectedDate) {
-            timeSelect.disabled = true;
+        if (!targetDate) { timeSelect.disabled = true; return; }
+
+        // クラスと日付の両方が一致する時間枠を抽出
+        const filtered = masterSchedules.filter(s => s.target_class === targetClass && s.date === targetDate);
+
+        filtered.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.time_slot;
+            
+            // 残り枠数を計算
+            let left = s.capacity - s.reserved_count;
+            if (left <= 0) {
+                opt.textContent = `${s.time_slot} (満員)`;
+                opt.disabled = true; // 満員の場合は選べないようにする
+            } else {
+                opt.textContent = `${s.time_slot} (残り ${left}組)`;
+            }
+            timeSelect.appendChild(opt);
+        });
+        timeSelect.disabled = false;
+    }
+
+    // 時間帯が変更された時の給食試食トリガー判定
+    function onTimeSlotChanged() {
+        const targetClass = document.getElementById('childClass').value;
+        const targetDate = document.getElementById('bookingDate').value;
+        const targetTime = document.getElementById('timeSlot').value;
+        const errorMsg = document.getElementById('timeSlotError');
+        const submitBtn = document.getElementById('submitBtn');
+
+        errorMsg.style.display = 'none';
+        submitBtn.disabled = true;
+        document.getElementById('lunchSection').style.display = 'none';
+
+        if (!targetTime) return;
+
+        // 選択された「クラス×日付×時間」の特定の枠データをピンポイントで取得
+        const activeSlot = masterSchedules.find(s => s.target_class === targetClass && s.date === targetDate && s.time_slot === targetTime);
+        
+        if (!activeSlot || (activeSlot.capacity - activeSlot.reserved_count) <= 0) {
+            errorMsg.style.display = 'block';
             return;
         }
 
-        const filteredSchedules = masterData.schedules.filter(s => s.date === selectedDate);
-        filteredSchedules.forEach(s => {
-            const leftSlots = s.capacity - s.reserved_count; // 残り枠の計算
-            let optionText = s.time_slot;
-            
-            if (leftSlots <= 0) {
-                optionText += " (満席)";
-            } else {
-                optionText += ` (残り ${leftSlots} 名)`;
-            }
-            
-            const opt = new Option(optionText, s.time_slot);
-            if (leftSlots <= 0) {
-                opt.disabled = true; // 満席の場合は選択不可にする
-                opt.style.color = '#ccc';
-            }
-            timeSelect.add(opt);
-        });
-        timeSelect.disabled = false;
-    });
-
-    document.getElementById('timeSlot').addEventListener('change', (e) => {
-        const selectedTime = e.target.value;
-        const lunchSection = document.getElementById('lunchSection');
-        const isLunchRequiredTime = masterData.lunch_times.includes(selectedTime);
-        
-        if (isLunchRequiredTime) {
-            lunchSection.style.display = 'block';
-        } else {
-            lunchSection.style.display = 'none';
+        // 全自動給食判定（該当時間帯なら表示）
+        if (lunchTimes.includes(targetTime)) {
+            document.getElementById('lunchSection').style.display = 'block';
         }
-    });
 
-    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+        submitBtn.disabled = false;
+    }
+
+    // 送信処理
+    async function submitForm(e) {
         e.preventDefault();
-        const submitBtn = e.target.querySelector('button');
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingMsg = document.getElementById('loadingMsg');
+        
         submitBtn.disabled = true;
-        submitBtn.innerText = '送信中...';
+        loadingMsg.style.display = 'block';
 
-        const lunchRadio = document.querySelector('input[name="lunch"]:checked');
-        const lunchSection = document.getElementById('lunchSection');
-        const lunchNeeded = (lunchSection.style.display === 'block') ? lunchRadio.value : '非対象';
+        const lunchValue = document.getElementById('lunchSection').style.display === 'block' 
+            ? document.querySelector('input[name="lunchNeeded"]:checked').value 
+            : "なし";
 
-        const formData = {
+        const payload = {
             childClass: document.getElementById('childClass').value,
             childName: document.getElementById('childName').value,
-            date: formatJapaneseDate(document.getElementById('bookingDate').value),
+            date: document.getElementById('bookingDate').value,
             timeSlot: document.getElementById('timeSlot').value,
-            lunchNeeded: lunchNeeded,
+            lunchNeeded: lunchValue,
             email: document.getElementById('email').value
         };
 
         try {
-            const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(formData) });
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
             const result = await response.json();
-            
+
             if (result.status === 'success') {
-                alert('予約が完了しました！確認メールをご確認ください。');
-                location.reload(); // 残数を最新にするため画面をリロード
+                alert('予約が完了しました。確認メールをお送りしましたのでご確認ください。');
+                location.reload();
             } else {
-                alert(result.message);
+                alert('エラー: ' + result.message);
+                submitBtn.disabled = false;
             }
         } catch (error) {
-            alert('通信エラーが発生しました。時間をおいて再度お試しください。');
-        } finally {
+            alert('通信エラーが発生しました。もう一度やり直してください。');
             submitBtn.disabled = false;
-            submitBtn.innerText = '予約を確定する';
+        } finally {
+            loadingMsg.style.display = 'none';
         }
-    });
+    }
 </script>
 </body>
 </html>
