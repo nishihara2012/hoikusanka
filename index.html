@@ -16,6 +16,9 @@
         button:hover { background: #d97706; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         .notice { background: #fef3c7; border: 1px solid #fde68a; padding: 12px; border-radius: 6px; font-size: 13px; color: #92400e; margin-bottom: 20px; line-height: 1.5; }
+        
+        /* 💡 表示・非表示を制御するスタイルを追加 */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -82,7 +85,6 @@
     }
 
     function initFormOptions() {
-        // クラス設定の反映
         const classSelect = document.getElementById('className');
         classSelect.innerHTML = '<option value="">選択してください</option>';
         if(systemConfig.classes) {
@@ -91,7 +93,6 @@
             });
         }
 
-        // 日付設定の反映（締切判定込み）
         const dateSelect = document.getElementById('reserveDate');
         dateSelect.innerHTML = '<option value="">選択してください</option>';
         if(systemConfig.dates) {
@@ -107,7 +108,6 @@
         if(!dl) return dateArray;
 
         const today = new Date();
-        // 一括日時指定（YYYY-MM-DDTHH:MM）を過ぎているかチェック
         if(dl.includes('-') && dl.includes('T')) {
             if(today > new Date(dl)) {
                 alert("大変申し訳ありません。今回の保育参加のオンライン受付期間は終了いたしました。");
@@ -117,7 +117,6 @@
             return dateArray;
         }
 
-        // ◯日前締切の判定
         let days = 0;
         if(dl.includes('1日前')) days = 1;
         if(dl.includes('2日前')) days = 2;
@@ -150,7 +149,6 @@
             const tTrim = t.trim();
             if(!tTrim) return;
 
-            // この特定枠の現在の予約数を数える
             const bookedCount = reservations.filter(res => res.className === cName && res.date === rDate && res.timeSlot === tTrim).length;
             const remains = maxLimit - bookedCount;
 
@@ -160,16 +158,21 @@
                 timeSelect.innerHTML += `<option value="${tTrim}" disabled>${tTrim} (満員)</option>`;
             }
         });
+        
+        // クラスや日付が変わったら昼食オプションの表示もリセット
+        toggleLunchOption();
     }
 
+    // 💡 管理画面で指定した時間帯（例：11:30-12:30）と完全一致した場合のみ表示
     function toggleLunchOption() {
         const tSlot = document.getElementById('timeSlot').value;
         const lunchGroup = document.getElementById('lunchGroup');
+        
         if(systemConfig.lunchTime && tSlot === systemConfig.lunchTime) {
             lunchGroup.classList.remove('hidden');
         } else {
             lunchGroup.classList.add('hidden');
-            document.getElementById('lunch').value = "無";
+            document.getElementById('lunch').value = "無"; // 隠れている間は「無」にする
         }
     }
 
@@ -196,14 +199,11 @@
             alert(res.message);
 
             if(res.status === "success") {
-                // 入力内容のクリア（リセット）
                 document.getElementById('reserveForm').reset();
-                toggleLunchOption();
-                // 枠の残り数を最新にするため再読み込み
+                toggleLunchOption(); // 送信成功後に昼食欄を再度非表示にする
                 loadSystemData();
             }
         } catch (error) {
-            // 英語ではなく、分かりやすい日本語に変換して表示
             alert("システムエラーまたは権限が不足しています。管理者（園）の設定画面でGASの「承認許可」が完了しているかご確認ください。");
         } finally {
             btn.disabled = false;
