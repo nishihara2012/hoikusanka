@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>保育参加 システム管理画面</title>
     <style>
+        /* 🖥️ 画面表示用の通常スタイル */
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px; }
         .admin-wrapper { display: flex; gap: 25px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
         .sidebar { flex: 1; min-width: 450px; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-height: 90vh; overflow-y: auto; }
@@ -56,6 +57,17 @@
         .login-box h3 { margin-bottom: 15px; color: #2c3e50; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 16px; text-align: center; box-sizing: border-box; }
         .login-box button { width: 100%; padding: 12px; font-size: 16px; }
+
+        /* 🖨️ 印刷専用スタイル（A4横に最適化して予約一覧だけをすっきり印刷） */
+        @media print {
+            body { background: white; color: #000; padding: 0; margin: 0; }
+            .top-bar, .sidebar, .btn, th:last-child, td:last-child, .card:last-child, h2:last-of-type { display: none !important; }
+            .admin-wrapper { display: block; width: 100%; }
+            .main-content { border: none; box-shadow: none; padding: 0; margin: 0; width: 100%; }
+            table { width: 100%; border: 1px solid #000; font-size: 13px; }
+            th, td { border: 1px solid #000; padding: 8px; color: #000 !important; background: transparent !important; }
+            @page { size: A4 landscape; margin: 10mm; }
+        }
     </style>
 </head>
 <body>
@@ -144,7 +156,6 @@
             <div class="card">
                 <div class="form-group" style="border-bottom: 1px solid #edf2f7; padding-bottom: 15px;">
                     <label style="display:block; font-weight:bold; margin-bottom:5px;">✉️ 管理者通知先メールアドレスの変更</label>
-                    <p style="font-size: 11px; color: #666; margin: 0 0 8px 0;">予約完了時に管理者に届く通知メールの送信先を設定します。</p>
                     <div class="input-row">
                         <input type="email" id="admin_email_val" placeholder="example@gmail.com">
                         <button class="btn btn-save" onclick="saveAdminEmailConfig()">変更保存</button>
@@ -166,7 +177,7 @@
         </div>
 
         <div class="main-content">
-            <h2><span class="section-title-icon">👥</span> 現在の予約状況一覧（希望日・時間順）</h2>
+            <h2><span class="section-title-icon">👥</span> 現在の予約状況一覧（クラス順・希望日順）</h2>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px;">
                 <button class="btn btn-save" style="background-color: #2b6cb0;" onclick="window.print()">🖨️ 印刷する</button>
                 <button class="btn btn-danger" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
@@ -175,9 +186,9 @@
             <table id="bookingsTable">
                 <thead>
                     <tr>
+                        <th>クラス</th>
                         <th>希望日</th>
                         <th>時間帯</th>
-                        <th>クラス</th>
                         <th>園児氏名</th>
                         <th>給食試食</th>
                         <th>メールアドレス</th>
@@ -259,72 +270,93 @@
     }
 
     function renderSystemConfig(config) {
+        if (!config) return;
+
         // ① クラスのバッジ描画
         const classesCont = document.getElementById('classes_container');
-        classesCont.innerHTML = "";
-        const currentClasses = config.classes || [];
-        currentClasses.forEach(c => {
-            const badge = document.createElement('span');
-            badge.className = 'badge';
-            badge.innerHTML = `${c} <span class="remove-icon" onclick="removeMasterItem('classes', '${c}')">×</span>`;
-            classesCont.appendChild(badge);
-        });
+        if (classesCont) {
+            classesCont.innerHTML = "";
+            const currentClasses = config.classes || [];
+            currentClasses.forEach(c => {
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.innerHTML = `${c} <span class="remove-icon" onclick="removeMasterItem('classes', '${c}')">×</span>`;
+                classesCont.appendChild(badge);
+            });
+        }
 
         // ② 希望日リストの描画
         const datesList = document.getElementById('dates_list');
-        datesList.innerHTML = "";
-        const currentDates = config.dates || [];
-        currentDates.forEach(d => {
-            const item = document.createElement('div');
-            item.className = 'list-item';
-            item.innerHTML = `<span>${d}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('dates', '${d}')">削除</button>`;
-            datesList.appendChild(item);
-        });
+        if (datesList) {
+            datesList.innerHTML = "";
+            const currentDates = config.dates || [];
+            currentDates.forEach(d => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `<span>${d}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('dates', '${d}')">削除</button>`;
+                datesList.appendChild(item);
+            });
+        }
 
         // ③ 時間帯リストの描画
         const slotsList = document.getElementById('timeslots_list');
-        slotsList.innerHTML = "";
-        const currentSlots = config.timeSlots || [];
-        currentSlots.forEach(s => {
-            const item = document.createElement('div');
-            item.className = 'list-item';
-            item.innerHTML = `<span>${s}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('timeSlots', '${s}')">削除</button>`;
-            slotsList.appendChild(item);
-        });
-
-        // 締切設定・定員初期値・管理者通知先メールアドレスのフォーム反映
-        if(document.getElementById('deadline_days')) {
-            document.getElementById('deadline_days').value = config.deadlineDays || 0;
-        }
-        if(document.getElementById('force_deadline_datetime')) {
-            document.getElementById('force_deadline_datetime').value = config.forceDeadlineDatetime || "";
-        }
-        if(document.getElementById('bulk_capacity')) {
-            document.getElementById('bulk_capacity').value = config.defaultCapacity || 2;
-        }
-        if(document.getElementById('admin_email_val')) {
-            document.getElementById('admin_email_val').value = config.adminEmail || "";
-        }
-
-        // 予約一覧テーブル描画
-        const tbody = document.querySelector('#bookingsTable tbody');
-        tbody.innerHTML = "";
-        if (!config.bookings || config.bookings.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">現在、予約はありません。</td></tr>`;
-        } else {
-            config.bookings.forEach(b => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${b.date}</td>
-                    <td>${b.timeSlot}</td>
-                    <td>${b.childClass}</td>
-                    <td>${b.childName}</td>
-                    <td>${b.lunchNeeded}</td>
-                    <td>${b.email || 'なし'}</td>
-                    <td><button class="btn btn-danger" onclick="deleteBooking('${b.id}')">削除</button></td>
-                `;
-                tbody.appendChild(tr);
+        if (slotsList) {
+            slotsList.innerHTML = "";
+            const currentSlots = config.timeSlots || [];
+            currentSlots.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `<span>${s}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('timeSlots', '${s}')">削除</button>`;
+                slotsList.appendChild(item);
             });
+        }
+
+        // フォームデータへのデータ安全反映
+        const elDeadlineDays = document.getElementById('deadline_days');
+        if (elDeadlineDays) elDeadlineDays.value = config.deadlineDays !== undefined ? config.deadlineDays : 0;
+
+        const elForceDeadline = document.getElementById('force_deadline_datetime');
+        if (elForceDeadline) elForceDeadline.value = config.forceDeadlineDatetime || "";
+
+        const elBulkCapacity = document.getElementById('bulk_capacity');
+        if (elBulkCapacity) elBulkCapacity.value = config.defaultCapacity !== undefined ? config.defaultCapacity : 2;
+
+        const elAdminEmail = document.getElementById('admin_email_val');
+        if (elAdminEmail) elAdminEmail.value = config.adminEmail || "";
+
+        // 📋 予約一覧テーブル描画（★【①クラス順 ➔ ②希望日 ➔ ③時間帯】の並び順に100%修正）
+        const tbody = document.querySelector('#bookingsTable tbody');
+        if (tbody) {
+            tbody.innerHTML = "";
+            let bookingsList = config.bookings || [];
+
+            if (bookingsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">現在、予約はありません。</td></tr>`;
+            } else {
+                // 📊 クラス名を最優先(1番)にしてソートするロジック
+                bookingsList.sort((a, b) => {
+                    // 1. クラス順で比較
+                    if (a.childClass !== b.childClass) return a.childClass.localeCompare(b.childClass);
+                    // 2. クラスが同じなら希望日順で比較
+                    if (a.date !== b.date) return a.date.localeCompare(b.date);
+                    // 3. 希望日も同じなら時間帯順で比較
+                    return a.timeSlot.localeCompare(b.timeSlot);
+                });
+
+                bookingsList.forEach(b => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${b.childClass}</strong></td>
+                        <td>${b.date}</td>
+                        <td>${b.timeSlot}</td>
+                        <td>${b.childName}</td>
+                        <td>${b.lunchNeeded}</td>
+                        <td>${b.email || 'なし'}</td>
+                        <td><button class="btn btn-danger" onclick="deleteBooking('${b.id}')">削除</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
         }
     }
 
@@ -380,7 +412,7 @@
     function changeAdminPassword() {
         const newPw = document.getElementById('new_pass_val').value.trim();
         if(!newPw) { alert("新しいパスワードを入力してください。"); return; }
-        sendPostAction("changeAdminPassword", { newPassword: newPw }, "パスワードを変更しました。次回から新しいパスワードでログインしてください。");
+        sendPostAction("changeAdminPassword", { newPassword: newPw }, "パスワードを変更しました。");
         document.getElementById('new_pass_val').value = "";
     }
 
