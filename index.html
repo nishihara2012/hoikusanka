@@ -77,11 +77,10 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxD-QW5_et3t3qV5f8cpyuIHRP-2OuHb1YS4HpymsoyAcV9SRo5XqmwfUIzepNHnnvW/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxls7Y-0NKbtFC3nnlBLUJil7RD2SBZ_xoir84UX4GuAAiu1aKpa00XtCzpi__tdq8r/exec";
     let masterSchedules = [];
     let lunchTimes = [];
 
-    // 画面読み込み時に初期データを取得
     window.addEventListener('DOMContentLoaded', async () => {
         try {
             const response = await fetch(`${GAS_URL}?action=getInitialData`);
@@ -95,7 +94,6 @@
             masterSchedules = data.schedules;
             lunchTimes = data.lunch_times;
 
-            // クラスの選択肢を生成
             const classSelect = document.getElementById('childClass');
             data.classes.forEach(c => {
                 const opt = document.createElement('option');
@@ -107,7 +105,6 @@
         }
     });
 
-    // クラスが変更されたら「そのクラスが存在する希望日」を重複なく抽出してセット
     function onClassOrDateChanged() {
         const targetClass = document.getElementById('childClass').value;
         const dateSelect = document.getElementById('bookingDate');
@@ -121,12 +118,10 @@
 
         if (!targetClass) { dateSelect.disabled = true; return; }
 
-        // 選択されたクラスに該当する日付のみを抽出して重複カット
         let availableDates = masterSchedules
             .filter(s => s.target_class === targetClass)
             .map(s => s.date);
         
-        // 重複を完全に削除（Unique化）
         let uniqueDates = [...new Set(availableDates)].sort();
 
         if(uniqueDates.length === 0) {
@@ -143,7 +138,6 @@
         dateSelect.disabled = false;
     }
 
-    // 希望日が変更されたら「そのクラス・その日の時間帯」を重複なく抽出してセット
     function onDateChanged() {
         const targetClass = document.getElementById('childClass').value;
         const targetDate = document.getElementById('bookingDate').value;
@@ -156,18 +150,18 @@
 
         if (!targetDate) { timeSelect.disabled = true; return; }
 
-        // クラスと日付の両方が一致する時間枠を抽出
+        // 🌟 クラス名と日付が完全一致する特定の時間枠のみを抽出
         const filtered = masterSchedules.filter(s => s.target_class === targetClass && s.date === targetDate);
 
         filtered.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.time_slot;
             
-            // 残り枠数を計算
-            let left = s.capacity - s.reserved_count;
+            // 🌟 クラス別の定員と予約状況から残り枠数を正しく計算
+            let left = Number(s.capacity) - Number(s.reserved_count);
             if (left <= 0) {
                 opt.textContent = `${s.time_slot} (満員)`;
-                opt.disabled = true; // 満員の場合は選べないようにする
+                opt.disabled = true;
             } else {
                 opt.textContent = `${s.time_slot} (残り ${left}組)`;
             }
@@ -176,7 +170,6 @@
         timeSelect.disabled = false;
     }
 
-    // 時間帯が変更された時の給食試食トリガー判定
     function onTimeSlotChanged() {
         const targetClass = document.getElementById('childClass').value;
         const targetDate = document.getElementById('bookingDate').value;
@@ -190,15 +183,13 @@
 
         if (!targetTime) return;
 
-        // 選択された「クラス×日付×時間」の特定の枠データをピンポイントで取得
         const activeSlot = masterSchedules.find(s => s.target_class === targetClass && s.date === targetDate && s.time_slot === targetTime);
         
-        if (!activeSlot || (activeSlot.capacity - activeSlot.reserved_count) <= 0) {
+        if (!activeSlot || (Number(activeSlot.capacity) - Number(activeSlot.reserved_count)) <= 0) {
             errorMsg.style.display = 'block';
             return;
         }
 
-        // 全自動給食判定（該当時間帯なら表示）
         if (lunchTimes.includes(targetTime)) {
             document.getElementById('lunchSection').style.display = 'block';
         }
@@ -206,7 +197,6 @@
         submitBtn.disabled = false;
     }
 
-    // 送信処理
     async function submitForm(e) {
         e.preventDefault();
         
