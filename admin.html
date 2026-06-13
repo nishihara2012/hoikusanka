@@ -194,7 +194,7 @@
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyvHbMurDE1IsQyxXUfL4LD2l1jgmr2jMZIXBobpTkGaQX4A3SbyPD1FDP6_TzhhdDl/execv";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyvHbMurDE1IsQyxXUfL4LD2l1jgmr2jMZIXBobpTkGaQX4A3SbyPD1FDP6_TzhhdDl/exec";
     let currentToken = "";
     let state = { classes: [], lunchTimes: [], availableDates: [], availableTimes: [], schedules: [], bookings: [] };
 
@@ -260,7 +260,6 @@
         state[key].forEach((item, index) => {
             const tag = document.createElement('div');
             tag.className = 'item-tag';
-            // 🌟 GASから届いた文字列を、そのまま無加工で100%出力
             tag.innerHTML = `${item} <button class="btn btn-danger btn-sm" style="border-radius:50%; padding:0px 5px; margin-left:6px;" onclick="deleteMaster('${key}', ${index})">×</button>`;
             container.appendChild(tag);
         });
@@ -271,7 +270,6 @@
         container.innerHTML = '';
         if(state.schedules.length === 0) { container.innerHTML = '<div style="color:#718096; font-size:12px;">希望日・時間帯・クラスを設定すると自動生成されます。</div>'; return; }
         
-        // 🌟 英語オブジェクトへの変換を一切やめ、プレーンな文字列として綺麗に並び替える
         state.schedules.sort((a,b) => (a.date + a.time_slot + a.target_class).localeCompare(b.date + b.time_slot + b.target_class));
         state.schedules.forEach(s => {
             const card = document.createElement('div');
@@ -286,12 +284,9 @@
         const tbody = document.getElementById('bookingTableBody'); tbody.innerHTML = '';
         if(state.bookings.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">現在、予約はありません。</td></tr>'; return; }
         
-        // 🌟 予約リストもプレーンな文字列同士で綺麗にソート
         state.bookings.sort((a, b) => (a.date + a.timeSlot).localeCompare(b.date + b.timeSlot));
-
         state.bookings.forEach(b => {
             const row = document.createElement('tr');
-            // 🌟 届いた文字列日付（yyyy/MM/dd）をそのままストレートに画面に差し込む
             row.innerHTML = `<td>${b.date}</td><td>${b.timeSlot}</td><td style="font-weight:bold;color:#2c3e50;">${b.childClass}</td><td>${b.childName}</td><td>${b.lunchNeeded}</td><td>${b.email}</td>
                 <td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteBookingFromServer('${b.id}')">削除</button></td>`;
             tbody.appendChild(row);
@@ -314,11 +309,13 @@
         if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; login(currentToken); }
     }
 
+    // 🌟【バグ修正対象】期間一括追加のロジック
     async function addMasterDateRange() {
         const startInput = document.getElementById('newMasterDateStart').value;
         const endInput = document.getElementById('newMasterDateEnd').value;
         const excludeWeekend = document.getElementById('schExcludeWeekend').checked;
         if(!startInput || !endInput) return alert('開始日と終了日の両方を選択してください。');
+        
         let start = new Date(startInput); let end = new Date(endInput);
         if(start > end) return alert('開始日が終了日より後になっています。');
 
@@ -329,9 +326,11 @@
                 let y = current.getFullYear();
                 let m = ('0' + (current.getMonth() + 1)).slice(-2);
                 let d = ('0' + current.getDate()).slice(-2);
+                // 🌟 余計な日本語標準時オブジェクトの結合バグを完全修正し、シンプルな「yyyy/MM/dd」を生成
                 let formattedStr = `${y}/${m}/${d}`;
                 if(!state.availableDates.includes(formattedStr)) { state.availableDates.push(formattedStr); addedCount++; }
             }
+            // 翌日へ進める処理
             current.setDate(current.getDate() + 1);
         }
         if(addedCount === 0) return alert('指定期間内に追加できる新しい日付がありません。');
