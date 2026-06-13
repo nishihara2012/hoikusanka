@@ -132,8 +132,10 @@
             <h2><span class="section-title-icon">👥</span> 全既存枠の定員数一括変更</h2>
             <div class="card">
                 <div class="form-group">
-                    <label for="bulk_capacity">現在登録されているすべての予約枠の定員数を強制的に書き換えます</label>
-                    <input type="number" id="bulk_capacity" min="1" value="2" style="width:80px;"> 名
+                    <label for="bulk_capacity">現在設定されているすべての予約枠の定員数をまとめて変更します（初期値: 2名）</label>
+                    <div style="margin-top:10px;">
+                        <input type="number" id="bulk_capacity" min="1" value="2" style="width:80px;"> 名
+                    </div>
                 </div>
                 <button class="btn btn-submit" onclick="updateBulkCapacity()">定員を一括上書き変更</button>
             </div>
@@ -190,7 +192,6 @@
     let adminToken = "";
     let activeDateTab = "individual";
     
-    // 現在GAS側にある生データを保持するメモリ（上書き用ベース）
     let currentMemory = {
         classes: [],
         available_dates: [],
@@ -240,21 +241,21 @@
         });
     }
 
-    function renderSystemConfig(config) {
-        // GASからきた最新データをメモリに退避
-        currentMemory.classes = config.classes || [];
-        currentMemory.available_dates = config.available_dates || [];
-        currentMemory.available_times = config.available_times || [];
+    function renderSystemConfig(data) {
+        // GAS(getInitialDataJson)の変数名に合わせて100%正確にマッピング
+        currentMemory.classes = data.classes || [];
+        currentMemory.available_dates = data.available_dates || [];
+        currentMemory.available_times = data.available_times || [];
 
-        // 締切設定の反映
+        // 締切設定・定員初期値の反映
         if(document.getElementById('deadline_days')) {
-            document.getElementById('deadline_days').value = config.deadline_days || 0;
+            document.getElementById('deadline_days').value = data.deadline_days || 0;
         }
         if(document.getElementById('force_deadline_datetime')) {
-            document.getElementById('force_deadline_datetime').value = config.force_deadline_datetime || "";
+            document.getElementById('force_deadline_datetime').value = data.force_deadline_datetime || "";
         }
         if(document.getElementById('bulk_capacity')) {
-            document.getElementById('bulk_capacity').value = config.default_capacity || 2;
+            document.getElementById('bulk_capacity').value = data.default_capacity || 2;
         }
 
         // ① クラスのバッジ描画
@@ -290,10 +291,10 @@
         // ⑤ 右側：予約一覧テーブル描画
         const tbody = document.querySelector('#bookingsTable tbody');
         tbody.innerHTML = "";
-        if (!config.bookings || config.bookings.length === 0) {
+        if (!data.bookings || data.bookings.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">現在、予約はありません。</td></tr>`;
         } else {
-            config.bookings.forEach(b => {
+            data.bookings.forEach(b => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${b.date}</td>
@@ -309,7 +310,7 @@
         }
     }
 
-    // アイテム追加処理 (GASの updateMaster ルールに合わせて現在の全量を再送する)
+    // アイテム追加処理（GASの updateMaster のルール通り配列を作って送信）
     function addMasterItem(key, inputId) {
         const val = document.getElementById(inputId).value.trim();
         if(!val) return;
@@ -325,12 +326,11 @@
         document.getElementById(inputId).value = "";
     }
 
-    // 希望日を単発追加
+    // 希望日個別追加
     function addSingleDate() {
         const d = document.getElementById('single_date').value;
         if(!d) { alert("日付を選択してください。"); return; }
         
-        // 2026-06-15 形式を 2026/06/15 形式に変形して保存
         const formattedDate = d.replace(/\-/g, '/');
         if (currentMemory.available_dates.includes(formattedDate)) {
             alert("既に存在する日付です。");
@@ -338,7 +338,6 @@
         }
 
         const listToTarget = [...currentMemory.available_dates, formattedDate];
-        // 日付順に並び替え
         listToTarget.sort();
 
         sendPostAction("updateMaster", { key: 'availableDates', list: listToTarget }, "希望日を追加しました。");
@@ -354,7 +353,6 @@
 
         const start = new Date(startStr);
         const end = new Date(endStr);
-        
         if (start > end) { alert("開始日と終了日の設定が逆です。"); return; }
 
         let listToTarget = [...currentMemory.available_dates];
@@ -362,13 +360,11 @@
 
         while (current <= end) {
             const day = current.getDay();
-            // 0: 日曜日, 6: 土曜日
             if (skipWeekends && (day === 0 || day === 6)) {
                 current.setDate(current.getDate() + 1);
                 continue;
             }
             
-            // yyyy/MM/dd 形式を作る
             const y = current.getFullYear();
             const m = String(current.getMonth() + 1).padStart(2, '0');
             const d = String(current.getDate()).padStart(2, '0');
@@ -384,7 +380,7 @@
         sendPostAction("updateMaster", { key: 'availableDates', list: listToTarget }, "期間内の日付を一括追加しました。");
     }
 
-    // 単一削除処理
+    // 単一アイテム削除
     function removeMasterItem(key, val) {
         if(!confirm(`「${val}」を削除しますか？`)) return;
 
@@ -406,7 +402,7 @@
         sendPostAction("updateMaster", { key: key, list: [] }, "一括削除しました。");
     }
 
-    // 全既存枠の定員一括変更
+    // 定員一括変更
     function updateBulkCapacity() {
         const cap = document.getElementById('bulk_capacity').value;
         if (!cap || cap < 1) { alert("有効な定員数を入力してください。"); return; }
@@ -435,7 +431,7 @@
         sendPostAction("clearAllBookings", {}, "すべての予約を削除しました。");
     }
 
-    // ポスト通信用共通関数
+    // 通信用共通関数
     function sendPostAction(actionName, dataObj, successMessage) {
         fetch(GAS_URL, {
             method: "POST",
