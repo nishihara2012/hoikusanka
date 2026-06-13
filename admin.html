@@ -26,8 +26,6 @@
         .btn-submit:hover { background-color: #1a4976; }
         .btn-save { background-color: #4CAF50; color: white; }
         .btn-save:hover { background-color: #45a049; }
-        .btn-reset { background-color: #f39c12; color: white; }
-        .btn-reset:hover { background-color: #d68910; }
         .btn-danger { background-color: #e53e3e; color: white; padding: 6px 12px; font-size: 13px; }
         .btn-danger:hover { background-color: #c53030; }
         
@@ -89,8 +87,7 @@
                     <input type="text" id="new_class" placeholder="例：ひよこ組">
                     <button class="btn btn-add" onclick="addMaster('classes', 'new_class')">追加</button>
                 </div>
-                <div class="badge-container" id="classes_container">
-                    </div>
+                <div class="badge-container" id="classes_container"></div>
             </div>
 
             <h2><span class="section-title-icon">📅</span> 希望日の設定（各クラス連動）</h2>
@@ -119,8 +116,7 @@
                     <button class="btn btn-submit" onclick="generateBulkDates()">指定期間をすべて追加</button>
                 </div>
 
-                <div class="list-box" id="dates_list">
-                    </div>
+                <div class="list-box" id="dates_list"></div>
             </div>
 
             <h2><span class="section-title-icon">🕒</span> 時間帯の設定（各クラス連動）</h2>
@@ -130,14 +126,12 @@
                     <input type="text" id="new_timeslot" placeholder="例：09:30-11:30">
                     <button class="btn btn-add" onclick="addMaster('timeSlots', 'new_timeslot')">追加</button>
                 </div>
-                <div class="list-box" id="timeslots_list">
-                    </div>
+                <div class="list-box" id="timeslots_list"></div>
             </div>
 
             <h2><span class="section-title-icon">👥</span> クラスごとの定員設定</h2>
             <div class="card">
-                <div id="class_capacities_form">
-                    </div>
+                <div id="class_capacities_form"></div>
                 <button class="btn btn-save" style="width:100%; margin-top:15px; padding:12px;" onclick="saveClassCapacities()">定員設定を保存する</button>
             </div>
 
@@ -162,27 +156,8 @@
                         <th>操作</th>
                     </tr>
                 </thead>
-                <tbody>
-                    </tbody>
+                <tbody></tbody>
             </table>
-
-            <br><br>
-
-            <h2><span class="section-title-icon">⏱️</span> 予約締切の設定</h2>
-            <div class="card">
-                <div class="form-group">
-                    <label for="deadline_days" style="display:block; font-weight:bold; margin-bottom:5px;">① ✕日前締切設定（指定された日数未満の予約をブロックします）</label>
-                    <input type="number" id="deadline_days" min="0" value="0" style="width:100px;"> 日前
-                </div>
-                <div class="form-group">
-                    <label for="force_deadline_datetime" style="display:block; font-weight:bold; margin-bottom:5px;">② 一括受付終了日時（指定日時以降、すべての予約受付を終了します）</label>
-                    <input type="datetime-local" id="force_deadline_datetime" style="width:250px;">
-                </div>
-                <div class="btn-group" style="display:flex; gap:10px; margin-top:15px;">
-                    <button class="btn btn-save" onclick="saveDeadlineSetting()">設定を保存</button>
-                    <button class="btn btn-reset" onclick="resetDeadlineFieldsOnly()">締切をリセット（解除）</button>
-                </div>
-            </div>
         </div>
 
     </div>
@@ -238,16 +213,7 @@
         });
     }
 
-    // 画面全体のデータを完全描画（前の仕様のロジック）
     function renderSystemConfig(config) {
-        // 締切設定の反映
-        if(document.getElementById('deadline_days')) {
-            document.getElementById('deadline_days').value = config.deadline_days || 0;
-        }
-        if(document.getElementById('force_deadline_datetime')) {
-            document.getElementById('force_deadline_datetime').value = config.force_deadline_datetime || "";
-        }
-
         // ① クラスのバッジ描画
         const classesCont = document.getElementById('classes_container');
         classesCont.innerHTML = "";
@@ -319,45 +285,37 @@
         }
     }
 
-    // マスターデータ追加（クラス・時間帯）
     function addMaster(type, inputId) {
         const val = document.getElementById(inputId).value.trim();
         if(!val) return;
-        
         sendPostAction("addMasterItem", { type: type, value: val }, "追加しました。");
         document.getElementById(inputId).value = "";
     }
 
-    // マスター単一削除
     function removeMasterItem(type, val) {
         if(!confirm(`「${val}」を削除しますか？`)) return;
         sendPostAction("removeMasterItem", { type: type, value: val }, "削除しました。");
     }
 
-    // マスター一括削除
     function clearMaster(type) {
         if(!confirm("本当にこの項目のデータをすべて一括削除しますか？")) return;
         sendPostAction("clearMaster", { type: type }, "一括削除しました。");
     }
 
-    // 単一希望日追加
     function addSingleDate() {
         const d = document.getElementById('single_date').value;
         if(!d) { alert("日付を選択してください。"); return; }
         sendPostAction("addMasterItem", { type: "dates", value: d }, "希望日を追加しました。");
     }
 
-    // 期間一括希望日追加
     function generateBulkDates() {
         const start = document.getElementById('bulk_start').value;
         const end = document.getElementById('bulk_end').value;
         const skipWeekends = document.getElementById('exclude_weekends').checked;
-
         if(!start || !end) { alert("開始日と終了日を選択してください。"); return; }
         sendPostAction("generateBulkDates", { startDate: start, endDate: end, excludeWeekends: skipWeekends }, "期間内の日付を追加しました。");
     }
 
-    // クラス別定員の保存
     function saveClassCapacities() {
         const inputs = document.querySelectorAll('.class-cap-input');
         const capacities = {};
@@ -365,39 +323,19 @@
             const cls = input.getAttribute('data-class');
             capacities[cls] = Number(input.value);
         });
-
         sendPostAction("saveClassCapacities", { capacities: capacities }, "クラス定員設定を保存しました。");
     }
 
-    // 締切設定の保存
-    function saveDeadlineSetting() {
-        const days = document.getElementById('deadline_days').value;
-        const datetime = document.getElementById('force_deadline_datetime').value;
-
-        sendPostAction("saveDeadline", { deadlineDays: days, forceDeadlineDatetime: datetime }, "締切設定を保存しました。");
-    }
-
-    // ✨ 締切設定欄のみをクリアして自動保存する安全リセット
-    function resetDeadlineFieldsOnly() {
-        if (!confirm("予約締切設定をリセットして、すべての締切を解除しますか？")) return;
-        document.getElementById('deadline_days').value = 0;
-        document.getElementById('force_deadline_datetime').value = "";
-        saveDeadlineSetting();
-    }
-
-    // 予約の削除
     function deleteBooking(id) {
         if (!confirm("この予約を削除しますか？")) return;
         sendPostAction("deleteBooking", { bookingId: id }, "予約を削除しました。");
     }
 
-    // 全予約一括削除
     function clearAllBookings() {
         if (!confirm("🚨本当に全ての予約データを一括削除しますか？この操作は戻せません。")) return;
         sendPostAction("clearAllBookings", {}, "すべての予約を削除しました。");
     }
 
-    // 共通通信用ポスト関数
     function sendPostAction(actionName, dataObj, successMessage) {
         fetch(GAS_URL, {
             method: "POST",
@@ -415,7 +353,6 @@
         .catch(err => alert("通信エラーが発生しました: " + err));
     }
 
-    // 希望日タブ切り替え
     function switchDateTab(tabName) {
         activeDateTab = tabName;
         document.getElementById('tab_individual').className = tabName === 'individual' ? 'tab active' : 'tab';
