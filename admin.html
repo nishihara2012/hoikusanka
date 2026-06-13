@@ -16,8 +16,8 @@
         
         .form-group { margin-bottom: 15px; }
         .input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-        input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], input[type="password"], select { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        input[type="text"] { flex: 1; }
+        input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], input[type="password"], input[type="email"], select { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        input[type="text"], input[type="email"] { flex: 1; }
         
         .btn { padding: 9px 18px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
         .btn-add { background-color: #1a202c; color: white; }
@@ -82,17 +82,17 @@
             
             <h2><span class="section-title-icon">🏢</span> クラス設定</h2>
             <div class="card">
-                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMasterAll('classes')">一括削除</button>
+                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('classes')">一括削除</button>
                 <div class="input-row" style="margin-top: 15px;">
                     <input type="text" id="new_class" placeholder="例：ひよこ組">
-                    <button class="btn btn-add" onclick="addMasterItem('classes', 'new_class')">追加</button>
+                    <button class="btn btn-add" onclick="addMaster('classes', 'new_class')">追加</button>
                 </div>
                 <div class="badge-container" id="classes_container"></div>
             </div>
 
             <h2><span class="section-title-icon">📅</span> 希望日の設定（各クラス連動）</h2>
             <div class="card">
-                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMasterAll('availableDates')">全希望日を一括削除</button>
+                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('dates')">全希望日を一括削除</button>
                 
                 <div class="tab-group" style="margin-top: 15px;">
                     <div class="tab active" id="tab_individual" onclick="switchDateTab('individual')">個別追加</div>
@@ -121,23 +121,46 @@
 
             <h2><span class="section-title-icon">🕒</span> 時間帯の設定（各クラス連動）</h2>
             <div class="card">
-                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMasterAll('availableTimes')">全時間帯を一括削除</button>
+                <button class="btn btn-danger" style="position: absolute; top: 15px; right: 20px;" onclick="clearMaster('timeSlots')">全時間帯を一括削除</button>
                 <div class="input-row" style="margin-top: 15px;">
                     <input type="text" id="new_timeslot" placeholder="例：09:30-11:30">
-                    <button class="btn btn-add" onclick="addMasterItem('availableTimes', 'new_timeslot')">追加</button>
+                    <button class="btn btn-add" onclick="addMaster('timeSlots', 'new_timeslot')">追加</button>
                 </div>
                 <div class="list-box" id="timeslots_list"></div>
             </div>
 
-            <h2><span class="section-title-icon">👥</span> 全既存枠の定員数一括変更</h2>
+            <h2><span class="section-title-icon">👥</span> 定員数の設定</h2>
             <div class="card">
                 <div class="form-group">
-                    <label for="bulk_capacity">現在設定されているすべての予約枠の定員数をまとめて変更します（初期値: 2名）</label>
+                    <label for="bulk_capacity">現在設定されているすべての予約枠の定員数を変更します（初期値: 2名）</label>
                     <div style="margin-top:10px;">
                         <input type="number" id="bulk_capacity" min="1" value="2" style="width:80px;"> 名
                     </div>
                 </div>
-                <button class="btn btn-submit" onclick="updateBulkCapacity()">定員を一括上書き変更</button>
+                <button class="btn btn-submit" onclick="updateBulkCapacity()">定員を変更する</button>
+            </div>
+
+            <h2><span class="section-title-icon">⚙️</span> システムメンテナンス設定</h2>
+            <div class="card">
+                <div class="form-group" style="border-bottom: 1px solid #edf2f7; padding-bottom: 15px;">
+                    <label style="display:block; font-weight:bold; margin-bottom:5px;">✉️ 管理者通知先メールアドレスの変更</label>
+                    <p style="font-size: 11px; color: #666; margin: 0 0 8px 0;">予約完了時に管理者に届く通知メールの送信先を設定します。</p>
+                    <div class="input-row">
+                        <input type="email" id="admin_email_val" placeholder="example@gmail.com">
+                        <button class="btn btn-save" onclick="saveAdminEmailConfig()">変更保存</button>
+                    </div>
+                </div>
+                <div class="form-group" style="border-bottom: 1px solid #edf2f7; padding-bottom: 15px; margin-top: 15px;">
+                    <label style="display:block; font-weight:bold; margin-bottom:5px;">🔑 管理者パスワードの変更</label>
+                    <div class="input-row">
+                        <input type="password" id="new_pass_val" placeholder="新しいパスワード">
+                        <button class="btn btn-save" onclick="changeAdminPassword()">パスワード変更</button>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn btn-danger" style="flex:1; background-color: #dd6b20;" onclick="clearAuthData()">🔑 認証情報をクリア</button>
+                    <button class="btn btn-danger" style="flex:1;" onclick="initializeSystem()">🚨 システムデータ初期化</button>
+                </div>
             </div>
 
         </div>
@@ -186,17 +209,11 @@
 </div>
 
 <script>
-    // ⚠️重要：あなたのGASの「ウェブアプリURL」をここに正しく貼り付けてください
+    // ⚠️重要：あなたのGASの「ウェブアプリURL」をここに正確に貼り付けてください
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxF4WB0ptJ9psXGpWqWYus3MWzB7u5xjYvt0jF3QvlI26h9mVCMHsm09XM4pDv-mjhd/exec";
 
     let adminToken = "";
     let activeDateTab = "individual";
-    
-    let currentMemory = {
-        classes: [],
-        available_dates: [],
-        available_times: []
-    };
 
     window.onload = function() {
         const savedToken = sessionStorage.getItem('adminToken');
@@ -241,27 +258,12 @@
         });
     }
 
-    function renderSystemConfig(data) {
-        // GAS(getInitialDataJson)の変数名に合わせて100%正確にマッピング
-        currentMemory.classes = data.classes || [];
-        currentMemory.available_dates = data.available_dates || [];
-        currentMemory.available_times = data.available_times || [];
-
-        // 締切設定・定員初期値の反映
-        if(document.getElementById('deadline_days')) {
-            document.getElementById('deadline_days').value = data.deadline_days || 0;
-        }
-        if(document.getElementById('force_deadline_datetime')) {
-            document.getElementById('force_deadline_datetime').value = data.force_deadline_datetime || "";
-        }
-        if(document.getElementById('bulk_capacity')) {
-            document.getElementById('bulk_capacity').value = data.default_capacity || 2;
-        }
-
+    function renderSystemConfig(config) {
         // ① クラスのバッジ描画
         const classesCont = document.getElementById('classes_container');
         classesCont.innerHTML = "";
-        currentMemory.classes.forEach(c => {
+        const currentClasses = config.classes || [];
+        currentClasses.forEach(c => {
             const badge = document.createElement('span');
             badge.className = 'badge';
             badge.innerHTML = `${c} <span class="remove-icon" onclick="removeMasterItem('classes', '${c}')">×</span>`;
@@ -271,30 +273,46 @@
         // ② 希望日リストの描画
         const datesList = document.getElementById('dates_list');
         datesList.innerHTML = "";
-        currentMemory.available_dates.forEach(d => {
+        const currentDates = config.dates || [];
+        currentDates.forEach(d => {
             const item = document.createElement('div');
             item.className = 'list-item';
-            item.innerHTML = `<span>${d}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('availableDates', '${d}')">削除</button>`;
+            item.innerHTML = `<span>${d}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('dates', '${d}')">削除</button>`;
             datesList.appendChild(item);
         });
 
         // ③ 時間帯リストの描画
         const slotsList = document.getElementById('timeslots_list');
         slotsList.innerHTML = "";
-        currentMemory.available_times.forEach(s => {
+        const currentSlots = config.timeSlots || [];
+        currentSlots.forEach(s => {
             const item = document.createElement('div');
             item.className = 'list-item';
-            item.innerHTML = `<span>${s}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('availableTimes', '${s}')">削除</button>`;
+            item.innerHTML = `<span>${s}</span><button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="removeMasterItem('timeSlots', '${s}')">削除</button>`;
             slotsList.appendChild(item);
         });
 
-        // ⑤ 右側：予約一覧テーブル描画
+        // 締切設定・定員初期値・管理者通知先メールアドレスのフォーム反映
+        if(document.getElementById('deadline_days')) {
+            document.getElementById('deadline_days').value = config.deadlineDays || 0;
+        }
+        if(document.getElementById('force_deadline_datetime')) {
+            document.getElementById('force_deadline_datetime').value = config.forceDeadlineDatetime || "";
+        }
+        if(document.getElementById('bulk_capacity')) {
+            document.getElementById('bulk_capacity').value = config.defaultCapacity || 2;
+        }
+        if(document.getElementById('admin_email_val')) {
+            document.getElementById('admin_email_val').value = config.adminEmail || "";
+        }
+
+        // 予約一覧テーブル描画
         const tbody = document.querySelector('#bookingsTable tbody');
         tbody.innerHTML = "";
-        if (!data.bookings || data.bookings.length === 0) {
+        if (!config.bookings || config.bookings.length === 0) {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">現在、予約はありません。</td></tr>`;
         } else {
-            data.bookings.forEach(b => {
+            config.bookings.forEach(b => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${b.date}</td>
@@ -310,128 +328,82 @@
         }
     }
 
-    // アイテム追加処理（GASの updateMaster のルール通り配列を作って送信）
-    function addMasterItem(key, inputId) {
+    function addMaster(type, inputId) {
         const val = document.getElementById(inputId).value.trim();
         if(!val) return;
-
-        let listToTarget = [];
-        if (key === 'classes') {
-            listToTarget = [...currentMemory.classes, val];
-        } else if (key === 'availableTimes') {
-            listToTarget = [...currentMemory.available_times, val];
-        }
-
-        sendPostAction("updateMaster", { key: key, list: listToTarget }, "追加しました。");
+        sendPostAction("addMasterItem", { type: type, value: val }, "追加しました。");
         document.getElementById(inputId).value = "";
     }
 
-    // 希望日個別追加
+    function removeMasterItem(type, val) {
+        if(!confirm(`「${val}」を削除しますか？`)) return;
+        sendPostAction("removeMasterItem", { type: type, value: val }, "削除しました。");
+    }
+
+    function clearMaster(type) {
+        if(!confirm("本当にこの項目のデータをすべて一括削除しますか？")) return;
+        sendPostAction("clearMaster", { type: type }, "一括削除しました。");
+    }
+
     function addSingleDate() {
         const d = document.getElementById('single_date').value;
         if(!d) { alert("日付を選択してください。"); return; }
-        
-        const formattedDate = d.replace(/\-/g, '/');
-        if (currentMemory.available_dates.includes(formattedDate)) {
-            alert("既に存在する日付です。");
-            return;
-        }
-
-        const listToTarget = [...currentMemory.available_dates, formattedDate];
-        listToTarget.sort();
-
-        sendPostAction("updateMaster", { key: 'availableDates', list: listToTarget }, "希望日を追加しました。");
+        sendPostAction("addMasterItem", { type: "dates", value: d }, "希望日を追加しました。");
     }
 
-    // 期間一括希望日追加
     function generateBulkDates() {
-        const startStr = document.getElementById('bulk_start').value;
-        const endStr = document.getElementById('bulk_end').value;
+        const start = document.getElementById('bulk_start').value;
+        const end = document.getElementById('bulk_end').value;
         const skipWeekends = document.getElementById('exclude_weekends').checked;
-
-        if(!startStr || !endStr) { alert("開始日と終了日を選択してください。"); return; }
-
-        const start = new Date(startStr);
-        const end = new Date(endStr);
-        if (start > end) { alert("開始日と終了日の設定が逆です。"); return; }
-
-        let listToTarget = [...currentMemory.available_dates];
-        let current = new Date(start);
-
-        while (current <= end) {
-            const day = current.getDay();
-            if (skipWeekends && (day === 0 || day === 6)) {
-                current.setDate(current.getDate() + 1);
-                continue;
-            }
-            
-            const y = current.getFullYear();
-            const m = String(current.getMonth() + 1).padStart(2, '0');
-            const d = String(current.getDate()).padStart(2, '0');
-            const dateStr = `${y}/${m}/${d}`;
-
-            if (!listToTarget.includes(dateStr)) {
-                listToTarget.push(dateStr);
-            }
-            current.setDate(current.getDate() + 1);
-        }
-
-        listToTarget.sort();
-        sendPostAction("updateMaster", { key: 'availableDates', list: listToTarget }, "期間内の日付を一括追加しました。");
+        if(!start || !end) { alert("開始日と終了日を選択してください。"); return; }
+        sendPostAction("generateBulkDates", { startDate: start, endDate: end, excludeWeekends: skipWeekends }, "期間内の日付を追加しました。");
     }
 
-    // 単一アイテム削除
-    function removeMasterItem(key, val) {
-        if(!confirm(`「${val}」を削除しますか？`)) return;
-
-        let listToTarget = [];
-        if (key === 'classes') {
-            listToTarget = currentMemory.classes.filter(item => item !== val);
-        } else if (key === 'availableDates') {
-            listToTarget = currentMemory.available_dates.filter(item => item !== val);
-        } else if (key === 'availableTimes') {
-            listToTarget = currentMemory.available_times.filter(item => item !== val);
-        }
-
-        sendPostAction("updateMaster", { key: key, list: listToTarget }, "削除しました。");
-    }
-
-    // 各項目ごとの一括削除
-    function clearMasterAll(key) {
-        if(!confirm("本当にこの項目のデータをすべて一括削除しますか？")) return;
-        sendPostAction("updateMaster", { key: key, list: [] }, "一括削除しました。");
-    }
-
-    // 定員一括変更
     function updateBulkCapacity() {
         const cap = document.getElementById('bulk_capacity').value;
         if (!cap || cap < 1) { alert("有効な定員数を入力してください。"); return; }
-        if (!confirm(`すべての予約枠の定員を「${cap}名」に変更します。よろしいですか？`)) return;
-
-        sendPostAction("updateBulkCapacity", { capacity: Number(cap) }, "すべての予約枠の定員を一括変更しました。");
+        sendPostAction("updateBulkCapacity", { capacity: Number(cap) }, "定員を一括上書き変更しました。");
     }
 
-    // 締切設定の保存
     function saveDeadlineSetting() {
         const days = document.getElementById('deadline_days').value;
         const datetime = document.getElementById('force_deadline_datetime').value;
-
-        sendPostAction("saveDeadline", { deadlineDays: days, forceDeadlineDatetime: datetime }, "締切設定を保存しました。");
+        sendPostAction("saveDeadlineConfig", { deadlineDays: Number(days), forceDeadlineDatetime: datetime }, "締切設定を保存しました。");
     }
 
-    // 予約の削除
+    function saveAdminEmailConfig() {
+        const email = document.getElementById('admin_email_val').value.trim();
+        if(!email) { alert("メールアドレスを入力してください。"); return; }
+        sendPostAction("saveAdminEmailConfig", { adminEmail: email }, "管理者通知先メールアドレスを保存しました。");
+    }
+
+    function changeAdminPassword() {
+        const newPw = document.getElementById('new_pass_val').value.trim();
+        if(!newPw) { alert("新しいパスワードを入力してください。"); return; }
+        sendPostAction("changeAdminPassword", { newPassword: newPw }, "パスワードを変更しました。次回から新しいパスワードでログインしてください。");
+        document.getElementById('new_pass_val').value = "";
+    }
+
+    function clearAuthData() {
+        if(!confirm("認証情報をクリアしますか？")) return;
+        sendPostAction("clearAuthData", {}, "認証情報をクリアしました。");
+    }
+
+    function initializeSystem() {
+        if(!confirm("🚨本当にシステムデータを初期化しますか？この操作は戻せません。")) return;
+        sendPostAction("initializeSystem", {}, "システムを初期化しました。");
+    }
+
     function deleteBooking(id) {
         if (!confirm("この予約を削除しますか？")) return;
         sendPostAction("deleteBooking", { bookingId: id }, "予約を削除しました。");
     }
 
-    // 全予約一括削除
     function clearAllBookings() {
         if (!confirm("🚨本当に全ての予約データを一括削除しますか？この操作は戻せません。")) return;
         sendPostAction("clearAllBookings", {}, "すべての予約を削除しました。");
     }
 
-    // 通信用共通関数
     function sendPostAction(actionName, dataObj, successMessage) {
         fetch(GAS_URL, {
             method: "POST",
