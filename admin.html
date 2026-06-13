@@ -6,28 +6,35 @@
     <title>保育参加 管理画面</title>
     <style>
         body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        h2 { border-bottom: 2px solid #4a6785; padding-bottom: 10px; color: #2c3e50; display: flex; align-items: center; gap: 10px; margin-top: 30px; }
-        .card { background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 6px; padding: 20px; margin-bottom: 25px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #4a5568; }
-        input[type="number"], input[type="datetime-local"], input[type="password"] { width: 100%; max-width: 300px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        button { padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .btn-primary { background-color: #4CAF50; color: white; }
-        .btn-primary:hover { background-color: #45a049; }
+        .container { max-width: 1050px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h2 { border-bottom: 2px solid #4a6785; padding-bottom: 10px; color: #2c3e50; display: flex; align-items: center; gap: 10px; margin-top: 35px; }
+        h2:first-of-type { margin-top: 0; }
+        .card { background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 6px; padding: 25px; margin-bottom: 25px; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; align-items: flex-end; }
+        .form-group { flex: 1; min-width: 180px; margin-bottom: 15px; }
+        .form-group.full-width { flex: bsc; min-width: 100%; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #4a5568; font-size: 14px; }
+        input[type="number"], input[type="date"], input[type="datetime-local"], input[type="password"], select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; font-size: 14px; background-color: #fff; }
+        input[type="number"] { max-width: 120px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        button { padding: 10px 22px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s; font-size: 14px; }
+        .btn-primary { background-color: #2b6cb0; color: white; }
+        .btn-primary:hover { background-color: #1a4976; }
+        .btn-success { background-color: #4CAF50; color: white; }
+        .btn-success:hover { background-color: #45a049; }
         .btn-danger { background-color: #f44336; color: white; }
         .btn-danger:hover { background-color: #da190b; }
         .btn-warning { background-color: #f39c12; color: white; }
         .btn-warning:hover { background-color: #d68910; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #e1e4e8; padding: 12px; text-align: left; }
-        th { background-color: #f2f2f2; color: #4a5568; }
+        th, td { border: 1px solid #e1e4e8; padding: 12px; text-align: left; font-size: 14px; }
+        th { background-color: #f2f2f2; color: #4a5568; font-weight: bold; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-box { background: white; padding: 4px 30px 30px 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .login-box h3 { margin-bottom: 20px; color: #2c3e50; }
-        .login-box input { width: 80%; padding: 10px; margin-bottom: 20px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; }
+        .login-box { background: white; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-width: 400px; width: 90%; }
+        .login-box h3 { margin-bottom: 15px; color: #2c3e50; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; text-align: center; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 12px; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -37,18 +44,17 @@
         <h3>🔑 管理者ログイン</h3>
         <p>スプレッドシートに設定されているパスワードを入力してください。</p>
         <input type="password" id="loginPw" placeholder="パスワードを入力">
-        <br>
-        <button class="btn-primary" onclick="attemptLogin()">ログイン</button>
+        <button class="btn-success" onclick="attemptLogin()">ログイン</button>
     </div>
 </div>
 
 <div class="container" id="mainContent" style="display: none;">
+    
     <h2>👥 現在の予約状況一覧（希望日・時間順）</h2>
     <div class="card" style="display: flex; justify-content: flex-end; gap: 10px; border: none; background: none; padding: 0;">
-        <button class="btn-primary" style="background-color: #2b6cb0;" onclick="window.print()">🖨️ 印刷する</button>
+        <button class="btn-primary" onclick="window.print()">🖨️ 印刷する</button>
         <button class="btn-danger" onclick="clearAllBookings()">⚠️ 全予約を一括削除</button>
     </div>
-
     <table id="bookingsTable">
         <thead>
             <tr>
@@ -61,18 +67,72 @@
                 <th>操作</th>
             </tr>
         </thead>
-        <tbody>
-            </tbody>
+        <tbody></tbody>
     </table>
 
-    <h2>👥 定員数の一括設定</h2>
+    <h2>📅 新しい予約枠の個別追加</h2>
+    <div class="card">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="add_date">日付</label>
+                <input type="date" id="add_date">
+            </div>
+            <div class="form-group">
+                <label for="add_class">クラス</label>
+                <select id="add_class">
+                    <option value="カモミール">カモミール</option>
+                    <option value="ANNEX">ANNEX</option>
+                    <option value="メリッサ">メリッサ</option>
+                    <option value="マジョラム">マジョラム</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="add_time">時間帯</label>
+                <select id="add_time">
+                    <option value="9:45〜11:30">9:45〜11:30</option>
+                    <option value="11:15〜12:45">11:15〜12:45</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="add_capacity">定員</label>
+                <input type="number" id="add_capacity" min="1" value="2">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <button class="btn-success" onclick="addSingleSchedule()">枠を追加する</button>
+            </div>
+        </div>
+    </div>
+
+    <h2>⚡ 予約枠の一括自動生成</h2>
+    <div class="card">
+        <p style="margin-top:0; color:#555; font-size:13px;">指定された期間（土日除く）に、全クラス・全時間帯の予約枠をスプレッドシート（schedules）へ一括自動生成します。</p>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="gen_start">開始日</label>
+                <input type="date" id="gen_start">
+            </div>
+            <div class="form-group">
+                <label for="gen_end">終了日</label>
+                <input type="date" id="gen_end">
+            </div>
+            <div class="form-group">
+                <label for="gen_capacity">初期定員数</label>
+                <input type="number" id="gen_capacity" min="1" value="2">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <button class="btn-primary" onclick="generateBulkSchedules()">予約枠を一括自動生成</button>
+            </div>
+        </div>
+    </div>
+
+    <h2>👥 全既存枠の定員数一括変更</h2>
     <div class="card">
         <div class="form-group">
-            <label for="bulk_capacity">すべての予約枠の定員数を一括で変更します</label>
+            <label for="bulk_capacity">現在登録されているすべての予約枠の定員数を強制的に書き換えます</label>
             <input type="number" id="bulk_capacity" min="1" value="2"> 名
         </div>
         <div class="btn-group">
-            <button class="btn-primary" style="background-color: #2b6cb0;" onclick="updateBulkCapacity()">定員を一括変更する</button>
+            <button class="btn-primary" style="background-color: #2b6cb0;" onclick="updateBulkCapacity()">定員を一括上書き変更</button>
         </div>
     </div>
 
@@ -87,7 +147,7 @@
             <input type="datetime-local" id="force_deadline_datetime">
         </div>
         <div class="btn-group">
-            <button class="btn-primary" onclick="saveDeadline()">設定を保存</button>
+            <button class="btn-success" onclick="saveDeadline()">設定を保存</button>
             <button class="btn-warning" onclick="resetDeadlineFields()">締切をリセット（解除）</button>
         </div>
     </div>
@@ -152,7 +212,6 @@
         if(document.getElementById('force_deadline_datetime')) {
             document.getElementById('force_deadline_datetime').value = config.force_deadline_datetime || "";
         }
-        // 復活した定員入力欄に現在のデフォルト定員を反映
         if(document.getElementById('bulk_capacity')) {
             document.getElementById('bulk_capacity').value = config.default_capacity || 2;
         }
@@ -180,16 +239,61 @@
         });
     }
 
-    // 🛠️ 復活：定員一括変更の通信処理
+    // 🛠️ 復活：枠の個別追加
+    function addSingleSchedule() {
+        const date = document.getElementById('add_date').value;
+        const cls = document.getElementById('add_class').value;
+        const time = document.getElementById('add_time').value;
+        const cap = document.getElementById('add_capacity').value;
+
+        if(!date) { alert("日付を選択してください。"); return; }
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "addSchedule",
+                token: adminToken,
+                data: { date, childClass: cls, timeSlot: time, capacity: Number(cap) }
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert("予約枠を追加しました。");
+            loadAdminData();
+        })
+        .catch(err => alert("追加エラー: " + err));
+    }
+
+    // 🛠️ 復活：枠の一括生成
+    function generateBulkSchedules() {
+        const start = document.getElementById('gen_start').value;
+        const end = document.getElementById('gen_end').value;
+        const cap = document.getElementById('gen_capacity').value;
+
+        if(!start || !end) { alert("開始日と終了日を選択してください。"); return; }
+
+        if(!confirm(`${start} ～ ${end} の期間に予約枠を自動生成しますか？`)) return;
+
+        fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "generateSchedules",
+                token: adminToken,
+                data: { startDate: start, endDate: end, capacity: Number(cap) }
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert("予約枠の一括生成が完了しました。");
+            loadAdminData();
+        })
+        .catch(err => alert("一括生成エラー: " + err));
+    }
+
     function updateBulkCapacity() {
         const cap = document.getElementById('bulk_capacity').value;
-        if (!cap || cap < 1) {
-            alert("有効な定員数を入力してください。");
-            return;
-        }
-        if (!confirm(`すべての予約枠の定員を「${cap}名」に変更します。よろしいですか？\n※個別に変更していた枠もすべて上書きされます。`)) {
-            return;
-        }
+        if (!cap || cap < 1) { alert("有効な定員数を入力してください。"); return; }
+        if (!confirm(`すべての予約枠の定員を「${cap}名」に変更します。よろしいですか？`)) return;
 
         fetch(GAS_URL, {
             method: "POST",
@@ -201,12 +305,8 @@
         })
         .then(res => res.json())
         .then(result => {
-            if (result.status === 'success') {
-                alert("すべての予約枠の定員を一括変更しました。");
-                loadAdminData();
-            } else {
-                alert("エラー: " + result.message);
-            }
+            alert("すべての予約枠の定員を一括変更しました。");
+            loadAdminData();
         })
         .catch(err => alert("通信エラー: " + err));
     }
@@ -230,18 +330,16 @@
         .catch(err => alert("保存エラー: " + err));
     }
 
+    // ✨ 安全なリセットボタン処理
     function resetDeadlineFields() {
-        if (!confirm("締切設定をリセットして、すべての予約枠の締切を解除しますか？")) {
-            return;
-        }
+        if (!confirm("締切設定をリセットして、すべての予約枠の締切を解除しますか？")) return;
         document.getElementById('deadline_days').value = 0;
         document.getElementById('force_deadline_datetime').value = "";
         saveDeadline();
     }
 
     function deleteBooking(id) {
-        if (!confirm("この予約を削除してもよろしいですか？（スプレッドシートからも消去されます）")) return;
-
+        if (!confirm("この予約を削除してもよろしいですか？")) return;
         fetch(GAS_URL, {
             method: "POST",
             body: JSON.stringify({
@@ -258,8 +356,7 @@
     }
 
     function clearAllBookings() {
-        if (!confirm("🚨【警告】本当に全ての予約データを削除しますか？この操作は取り消せません。")) return;
-
+        if (!confirm("🚨本当に全ての予約データを削除しますか？")) return;
         fetch(GAS_URL, {
             method: "POST",
             body: JSON.stringify({
