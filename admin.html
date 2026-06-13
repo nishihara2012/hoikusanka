@@ -309,7 +309,7 @@
         if(await sendAction("updateMaster", { key: "availableDates", list: state.availableDates })) { input.value = ''; login(currentToken); }
     }
 
-    // 🌟【バグ修正対象】期間一括追加のロジック
+    // 🌟 期間一括追加のロジックのみをベースコードから安全に修正
     async function addMasterDateRange() {
         const startInput = document.getElementById('newMasterDateStart').value;
         const endInput = document.getElementById('newMasterDateEnd').value;
@@ -326,11 +326,11 @@
                 let y = current.getFullYear();
                 let m = ('0' + (current.getMonth() + 1)).slice(-2);
                 let d = ('0' + current.getDate()).slice(-2);
-                // 🌟 余計な日本語標準時オブジェクトの結合バグを完全修正し、シンプルな「yyyy/MM/dd」を生成
+                
+                // 🌟 ここで日付オブジェクトが不正に混入するのを防ぎ、シンプルな文字列「yyyy/MM/dd」だけを配列に格納します
                 let formattedStr = `${y}/${m}/${d}`;
                 if(!state.availableDates.includes(formattedStr)) { state.availableDates.push(formattedStr); addedCount++; }
             }
-            // 翌日へ進める処理
             current.setDate(current.getDate() + 1);
         }
         if(addedCount === 0) return alert('指定期間内に追加できる新しい日付がありません。');
