@@ -18,6 +18,8 @@
         .btn-primary:hover { background-color: #45a049; }
         .btn-danger { background-color: #f44336; color: white; }
         .btn-danger:hover { background-color: #da190b; }
+        .btn-warning { background-color: #f39c12; color: white; }
+        .btn-warning:hover { background-color: #d68910; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { border: 1px solid #e1e4e8; padding: 12px; text-align: left; }
         th { background-color: #f2f2f2; color: #4a5568; }
@@ -77,7 +79,7 @@
         </div>
         <div class="btn-group">
             <button class="btn-primary" onclick="saveDeadline()">設定を保存</button>
-            <button class="btn-danger" onclick="resetDeadline()">締切をリセット（解除）</button>
+            <button class="btn-warning" onclick="resetDeadlineFields()">締切をリセット（解除）</button>
         </div>
     </div>
 </div>
@@ -90,7 +92,6 @@
 
     // ページ読み込み時に実行
     window.onload = function() {
-        // すでにセッションにトークンがあれば自動ログイン
         const savedToken = sessionStorage.getItem('adminToken');
         if (savedToken) {
             adminToken = savedToken;
@@ -138,9 +139,8 @@
         });
     }
 
-    // 画面へのデータ反映（ズレの修正・ソート反映）
+    // 画面へのデータ反映
     function renderData(config) {
-        // 締切設定の反映
         if(document.getElementById('deadline_days')) {
             document.getElementById('deadline_days').value = config.deadline_days || 0;
         }
@@ -148,7 +148,6 @@
             document.getElementById('force_deadline_datetime').value = config.force_deadline_datetime || "";
         }
 
-        // 予約一覧の反映（ズレを解消した状態）
         const tbody = document.querySelector('#bookingsTable tbody');
         tbody.innerHTML = "";
 
@@ -192,28 +191,17 @@
         .catch(err => alert("保存エラー: " + err));
     }
 
-    // ✨追加：締切設定のリセットボタン機能
-    function resetDeadline() {
+    // ✨ 安全なリセット処理（入力欄をゼロ・空欄にしてそのまま安全に保存するだけ）
+    function resetDeadlineFields() {
         if (!confirm("締切設定をリセットして、すべての予約枠の締切を解除しますか？")) {
             return;
         }
-
+        // ① 画面の数字と日付を真っさらにする
         document.getElementById('deadline_days').value = 0;
         document.getElementById('force_deadline_datetime').value = "";
-
-        fetch(GAS_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "saveDeadline",
-                token: adminToken,
-                data: { deadlineDays: 0, forceDeadlineDatetime: "" }
-            })
-        })
-        .then(() => {
-            alert("締切設定をリセットしました。すべての枠で申込が可能になりました。");
-            loadAdminData();
-        })
-        .catch(err => alert("リセットエラー: " + err));
+        
+        // ② その状態のまま、通常の「保存処理」を自動実行する
+        saveDeadline();
     }
 
     // 1件の予約を削除
