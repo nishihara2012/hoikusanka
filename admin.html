@@ -12,7 +12,6 @@
         .admin-left { flex: 1.2; min-width: 400px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
         .admin-right { flex: 1.5; min-width: 450px; }
         .form-group { margin-bottom: 25px; border-bottom: 1px dashed #ddd; padding-bottom: 20px; }
-        .form-group:last-child { border-bottom: none; }
         label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #004085; }
         .input-inline { display: flex; gap: 8px; margin-bottom: 10px; }
         input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
@@ -24,21 +23,18 @@
         .item-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .item-badge { background: #e1ecf4; padding: 4px 8px; border-radius: 4px; font-size: 13px; display: flex; align-items: center; gap: 6px; border: 1px solid #bce0fd; }
         .print-btn { background: #28a745; margin-bottom: 15px; padding: 12px; font-size: 15px; width: 48%; }
-        .print-btn:hover { background: #218838; }
         .clear-all-btn { background: #dc3545; margin-bottom: 15px; padding: 12px; font-size: 15px; width: 48%; float: right; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #e1ecf4; color: #333; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .auth-container { max-width: 350px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .section-title { font-size: 12px; color: #666; margin-bottom: 4px; font-weight: normal; }
         
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
             #printArea { position: absolute; left: 0; top: 0; width: 100%; }
-            th { background-color: #e1ecf4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
         }
     </style>
@@ -57,7 +53,6 @@
 <div id="mainView" class="container hidden">
     <h2>西原りとるぱんぷきんず 保育参加管理システム</h2>
     <div class="admin-layout">
-        
         <div class="admin-left">
             <h3>各項目設定</h3>
             
@@ -182,8 +177,8 @@
 </div>
 
 <script>
-    // ⚠️【差し替え】新しくデプロイしたGASのウェブアプリURLを貼り付けてください
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxBonJUMWI5dPs-rqsmApg15hdXdVhljrwMQk73WPA_raSH0lZpz2aLCv--iAoB8c2n/exec";
+    // ⚠️【差し替え】新しくデプロイした最新のGASのウェブアプリURLをここに貼り付けてください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxyaWAEH8nSV520z-AY_OyO4G7zYTgdX7ten0F0lJh8-E-k12A8nJQ9X9RN-Dp6NQSR/exec";
     let systemConfig = {};
 
     async function loadAdminData() {
@@ -218,7 +213,7 @@
             if(systemConfig.times) {
                 systemConfig.times.split(',').forEach(t => {
                     const selected = (t.trim() === systemConfig.lunchTime) ? 'selected' : '';
-                    lunchSelect.innerHTML += `<option value="${t.trim()}">${t.trim()}</option>`;
+                    lunchSelect.innerHTML += `<option value="${t.trim()}" ${selected}>${t.trim()}</option>`;
                 });
             }
 
@@ -226,7 +221,6 @@
             tbody.innerHTML = '';
             if(data.reservations && data.reservations.length > 0) {
                 data.reservations.forEach(res => {
-                    // 日付変換（万が一ISO表記になっても綺麗に直す）
                     let dDisplay = res.date;
                     if(dDisplay.includes('T')) dDisplay = dDisplay.split('T')[0];
 
@@ -244,7 +238,7 @@
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">現在、予約はありません。</td></tr>';
             }
         } catch (error) {
-            alert("データの取得に失敗しました。");
+            alert("データの取得に失敗しました。URLが正しいか確認してください。");
         }
     }
 
@@ -281,7 +275,7 @@
     }
 
     async function clearAllReservations() {
-        if(!confirm("⚠️本当にすべての予約データを削除しますか？スプレッドシートの中身もクリアされます。")) return;
+        if(!confirm("⚠️本当にすべての予約データを削除しますか？")) return;
         try {
             const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ type: 'clear_all_reservations' }) });
             const res = await response.json();
